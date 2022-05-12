@@ -7,10 +7,10 @@ Backend on Node JS for watching at cryptocurrency trades.
 ### Command line parameters
 
 Through command line attributes you can set application parameters for every instance. Currently we have four parameters for running:
-- -mode - application mode
-- -port - application server port (only for REST API mode)
-- -ex - list of exchanges for watching
-- -pairs - list of trading pairs for watching
+- `-mode` - application mode
+- `-port` - application server port (only for REST API mode)
+- `-ex` - list of exchanges for watching (only for watcher mode)
+- `-pairs` - list of trading pairs for watching (only for watcher mode)
 
 Application have three working modes: 
 * **restapi** - in this mode application run server at port 3000 (by default), and you can call REST API endpoints.
