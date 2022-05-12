@@ -2,7 +2,12 @@
 Backend on Node JS for watching at cryptocurrency trades.
 
 ## Installation
-`git clone https://github.com/yodui/madcoins-backend.git`
+```
+git clone https://github.com/yodui/madcoins-backend.git
+npm install
+```
+
+Application use PostgreSQL relational database. Structure of database you can find in [/src/db/database.sql](/src/db/database.sql), database connection parametrs sets in [/src/db/db.ts](/src/db/db.ts).
 
 ### Command line parameters
 
