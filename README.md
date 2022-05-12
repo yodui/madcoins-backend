@@ -6,7 +6,7 @@ Backend on Node JS for watching at cryptocurrency trades.
 
 ### Command line parameters
 
-Application have two working modes: 
+Application have three working modes: 
 * **restapi** - in this mode application run server at port 3000 (by default), and you can call REST API endpoints.
 * **watcher** - in this mode app get list of exchanges and trading pairs for watching from command line and subscribe to trades of this pairs.
 * **julius** - this is both modes in one, name - reference to *Julius Caesar*.
