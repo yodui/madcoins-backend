@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "removeComments": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "watch": true
+  },
+  "include" : [
+    "src/index.ts",
+    "src/db/*",
+    "src/utils/*",
+    "src/routers/*",
+    "src/controllers/*",
+    "src/classes/exchange/*"
+  ]
+}
