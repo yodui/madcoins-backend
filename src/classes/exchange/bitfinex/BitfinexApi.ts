@@ -2,7 +2,7 @@ import ws from "ws";
 import * as fs from "fs";
 
 import axios from "axios";
-import {ITradingPair, ITrade, Coin} from "../../Interfaces.js";
+import {ITradingPair, ITrade, ECoin} from "../../Interfaces.js";
 import {Exchange, ETickerConvert} from '../Exchange.js';
 import TradeService from "../../../services/trade.service.js";
 
@@ -15,9 +15,9 @@ class BitfinexApi extends Exchange {
     // Ticker conversation below app and exchange formats
     // For what? Some times exchange invent unique ticker names, ex. UST instead of USDT
     // Converting format: exchange format => to Coin.TICKER (app format)
-    static convertRules:Array<[string, Coin]> = [
-        ['UST', Coin.USDT],
-        ['USD', Coin.USDC]
+    static convertRules:Array<[string, ECoin]> = [
+        ['UST', ECoin.USDT],
+        ['USD', ECoin.USDC]
     ];
 
     // testing keys
@@ -104,7 +104,7 @@ class BitfinexApi extends Exchange {
         });
     }
 
-    static getPairsByCoin(coinTicker: Coin) {
+    static getPairsByCoin(coinTicker: ECoin) {
         return new Promise(async (resolve, reject) => {
             try {
                 const pairs = await this.getPairs();

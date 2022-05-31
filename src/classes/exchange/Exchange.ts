@@ -1,4 +1,4 @@
-import {Coin, ITradingPair} from "../Interfaces.js";
+import {ECoin, ITradingPair} from "../Interfaces.js";
 
 enum ETickerConvert {
     PROJECT_VIEW,
@@ -13,7 +13,7 @@ class Exchange {
     static pairs:Array<ITradingPair> = [];
 
     // Convert tickers to app format, ex. UST => USDT
-    static toAppFormat(pair: ITradingPair, rules: Array<[string, Coin]>) {
+    static toAppFormat(pair: ITradingPair, rules: Array<[string, ECoin]>) {
         for(let r in rules) {
             // convert tickers of pair ot application format
             if(pair[0] === rules[r][0]) pair[0] = rules[r][1];
@@ -23,7 +23,7 @@ class Exchange {
     }
 
     // Convert tickers to exchange format, ex. USDT => UST
-    static toExchangeFormat(pair: ITradingPair, rules: Array<[string, Coin]>) {
+    static toExchangeFormat(pair: ITradingPair, rules: Array<[string, ECoin]>) {
         let exPair:Array<string> = [pair[0], pair[1]];
         for(let r in rules) {
             // convert tickers of pair ot exchange format
@@ -34,7 +34,7 @@ class Exchange {
     }
 
     static existsTickers(pair: ITradingPair): boolean {
-        if(Coin[pair[0]] === undefined || Coin[pair[1]] === undefined) {
+        if(ECoin[pair[0]] === undefined || ECoin[pair[1]] === undefined) {
             return false;
         }
         return true;

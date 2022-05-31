@@ -13,10 +13,6 @@ ALTER TABLE trades ADD CONSTRAINT pkTradeId PRIMARY KEY (tradeId);
 CREATE UNIQUE INDEX ukTradeOnExchange ON trades (exId, exTradeId);
 -- Only one trading pair on exchange
 CREATE UNIQUE INDEX ukPairOnExchange ON trades (exId, pairId);
--- Foreign key for exchange
-ALTER TABLE trades ADD CONSTRAINT fkExchangeId FOREIGN KEY (exId) REFERENCES exchanges (exId) ON DELETE CASCADE;
--- Foreign key for pair
-ALTER TABLE trades ADD CONSTRAINT fkTradingPairId FOREIGN KEY (pairId) REFERENCES tradingPairs (pairId) ON DELETE CASCADE;
 
 CREATE TABLE exchanges (
     exId SERIAL,
@@ -52,9 +48,28 @@ CREATE TABLE tradingPairs (
 -- Primary key for pairs
 ALTER TABLE tradingPairs ADD CONSTRAINT pkTradingPairId PRIMARY KEY (pairId);
 
-CREATE TABLE users {
+-- Foreign key for exchange
+ALTER TABLE trades ADD CONSTRAINT fkExchangeId FOREIGN KEY (exId) REFERENCES exchanges (exId) ON DELETE CASCADE;
+-- Foreign key for pair
+ALTER TABLE trades ADD CONSTRAINT fkTradingPairId FOREIGN KEY (pairId) REFERENCES tradingPairs (pairId) ON DELETE CASCADE;
+
+CREATE TABLE users (
     userId SERIAL,
-    active SMALLINT DEFAULT 0
-}
+    email VARCHAR(64) NULL,
+    password VARCHAR(128) NULL,
+    active SMALLINT DEFAULT 0,
+    registerDate TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    lastVisitDate TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    activationLink VARCHAR(128) NULL
+);
 -- Primary key for user
 ALTER TABLE users ADD CONSTRAINT pkUserId PRIMARY KEY (userId);
+
+CREATE TABLE tokens (
+    tokenId SERIAL,
+    userId INT,
+    refreshToken VARCHAR(512) NULL
+);
+
+-- Primary key for tokens
+ALTER TABLE tokens ADD CONSTRAINT pkTokenId PRIMARY KEY (tokenId);

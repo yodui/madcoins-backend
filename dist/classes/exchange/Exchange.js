@@ -1,4 +1,4 @@
-import { Coin } from "../Interfaces.js";
+import { ECoin } from "../Interfaces.js";
 var ETickerConvert;
 (function (ETickerConvert) {
     ETickerConvert[ETickerConvert["PROJECT_VIEW"] = 0] = "PROJECT_VIEW";
@@ -27,7 +27,7 @@ class Exchange {
         return exPair;
     }
     static existsTickers(pair) {
-        if (Coin[pair[0]] === undefined || Coin[pair[1]] === undefined) {
+        if (ECoin[pair[0]] === undefined || ECoin[pair[1]] === undefined) {
             return false;
         }
         return true;

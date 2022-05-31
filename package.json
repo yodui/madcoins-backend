@@ -5,14 +5,20 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode restapi",
-    "restapi": "nodemon --ignore '*.cache.json' dist/index.js -mode restapi -port 3000",
+    "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode api",
+    "restapi": "nodemon --ignore '*.cache.json' dist/index.js -mode api -port 3000",
     "watcher": "nodemon --ignore '*.cache.json' dist/index.js -mode watcher -ex bitfinex poloniex -pairs ethusdt ethbtc"
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "bcrypt": "^5.0.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
     "express": "^4.18.1",
+    "jsonwebtoken": "^8.5.1",
     "pg": "^8.7.3",
+    "uuid": "^8.3.2",
     "ws": "^8.5.0"
   },
   "devDependencies": {

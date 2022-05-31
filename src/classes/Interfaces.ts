@@ -1,9 +1,9 @@
 interface ITradingPair extends Array<string|undefined> {
-    0: Coin|undefined, // from
-    1: Coin|undefined // to
+    0: ECoin|undefined, // from
+    1: ECoin|undefined // to
 }
 
-enum Coin {
+enum ECoin {
     BTC = 'BTC', // Bitcoin
     ETH = 'ETH', // Ethereum
     USDT = 'USDT', // Tether
@@ -37,4 +37,19 @@ interface ITrade {
     rate: number // Funding rate of the trade
 }
 
-export { ITradingPair, ITrade, IExchange, Coin };
+interface IUser {
+    userId?: number|undefined, // user ID
+    email: string, // user email and login
+    password?: string, // user password
+    active?: boolean, // active state of user
+    tsDateReg?: bigint|undefined, // registration date, timestamp
+    tsDateLastVisit?: bigint|undefined, // last visit, timestamp
+    activationLink?: string // activation secret string
+}
+
+interface IToken {
+
+}
+
+export { ITradingPair, ITrade, IExchange, IUser, ECoin };
+

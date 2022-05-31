@@ -1,14 +1,14 @@
 import ws from "ws";
 import * as fs from "fs";
 import axios from "axios";
-import { Coin } from "../../Interfaces.js";
+import { ECoin } from "../../Interfaces.js";
 import { Exchange } from '../Exchange.js';
 import TradeService from "../../../services/trade.service.js";
 class BitfinexApi extends Exchange {
     static exTicker = 'BITFINEX';
     static convertRules = [
-        ['UST', Coin.USDT],
-        ['USD', Coin.USDC]
+        ['UST', ECoin.USDT],
+        ['USD', ECoin.USDC]
     ];
     static key = '';
     static secretKey = '';

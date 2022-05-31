@@ -1,18 +1,18 @@
-var Coin;
-(function (Coin) {
-    Coin["BTC"] = "BTC";
-    Coin["ETH"] = "ETH";
-    Coin["USDT"] = "USDT";
-    Coin["USDC"] = "USDC";
-    Coin["EOS"] = "EOS";
-    Coin["EUR"] = "EUR";
-    Coin["LUNA"] = "LUNA";
-    Coin["BNB"] = "BNB";
-    Coin["XRP"] = "XRP";
-    Coin["SOL"] = "SOL";
-    Coin["ADA"] = "ADA";
-    Coin["DOGE"] = "DOGE";
-    Coin["DOT"] = "DOT";
-})(Coin || (Coin = {}));
-export { Coin };
+var ECoin;
+(function (ECoin) {
+    ECoin["BTC"] = "BTC";
+    ECoin["ETH"] = "ETH";
+    ECoin["USDT"] = "USDT";
+    ECoin["USDC"] = "USDC";
+    ECoin["EOS"] = "EOS";
+    ECoin["EUR"] = "EUR";
+    ECoin["LUNA"] = "LUNA";
+    ECoin["BNB"] = "BNB";
+    ECoin["XRP"] = "XRP";
+    ECoin["SOL"] = "SOL";
+    ECoin["ADA"] = "ADA";
+    ECoin["DOGE"] = "DOGE";
+    ECoin["DOT"] = "DOT";
+})(ECoin || (ECoin = {}));
+export { ECoin };
 //# sourceMappingURL=Interfaces.js.map

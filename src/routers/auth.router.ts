@@ -1,22 +1,24 @@
 import { Router } from 'express';
-import ExchangeController from '../controllers/exchange.controller.js';
+import AuthController from '../controllers/auth.controller.js';
 
-const router = new Router();
+const AuthRouter = new Router();
 
-// create exchange
-router.post('/exchange', ExchangeController.createExchange);
+// user registration
+AuthRouter.post('/registration', AuthController.registration);
 
-// get all exchanges
-router.get('/exchange', ExchangeController.getExchanges);
+// user account activation
+AuthRouter.get('/activate/:link', AuthController.activate);
 
-// get one exchange by id
-router.get('/exchange/:id', ExchangeController.getExchange);
+// refresh JWT token
+AuthRouter.get('/token/refresh', AuthController.createRefreshToken);
 
-// update exchange
-router.put('/exchange', ExchangeController.updateExchange);
+// user login
+AuthRouter.post('/login', AuthController.login);
 
-// delete exchange
-router.delete('/exchange/:id', ExchangeController.deleteExchange)
+// user logout
+AuthRouter.post('/logout', AuthController.logout);
+
+AuthRouter.get('/test', AuthController.getTestData);
 
 
-export { router as ExchangeRouter };
+export { AuthRouter };

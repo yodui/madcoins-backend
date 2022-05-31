@@ -11,7 +11,12 @@ Application use PostgreSQL relational database. Structure of database you can fi
 
 ### Command line parameters
 
-Through command line attributes you can set application parameters for every instance. Currently we have four parameters for running:
+Through command line attributes you can set application parameters for every instance. You can set parameters in command line directly or link config file.
+Application architecture means use few instance of application, one for API, others for cryptocurrencies rate watching.
+Use of config files can be more easily when we need to divide a cryptocurrencies for watching by batches.
+
+Command line parameters:
+- `-config` - name of config file for app instance
 - `-mode` - application mode
 - `-port` - application server port (only for REST API mode)
 - `-ex` - list of exchanges for watching (only for watcher mode)
@@ -25,6 +30,8 @@ Application have three working modes:
 **Example:**
 `node index.js -mode restapi -port 2800` - run only in REST API mode at port 2800
 `node index.js -mode watcher -ex bitfinex -pairs ethbtc ethusdt` - run watcher mode and subscribe to all trades in Bitfinex ETH-BTC and ETH-USDT
+
+####
 
 ### Development scripts
 | Command | Description |
