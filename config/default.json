@@ -1,3 +1,6 @@
 {
-  "serverPort": 3000
+  "exchanges": {
+    "bitfinex": ["btcusdt", "btceth"],
+    "poloniex": ["btcusdt"]
+  }
 }

@@ -6,14 +6,16 @@ export default class MailService {
         secure: false,
         auth: {
             user: 'freevasya@gmail.com',
-            pass: '32614170337'
+            pass: 'gitzqvqdvhgueybu'
         }
     });
     static async sendActivationMail(email, activationLink) {
-        console.log(process.env.SMTP_HOST, ' ', process.env.SMTP_PORT, ' ', process.env.SMTP_USER, ' ', process.env.SMTP_PASSWORD);
-        console.log(this.transporter.sendMail);
-        console.log('email: ', email);
         try {
+            const isEnabled = parseInt(process.env.SMTP_SENDING);
+            if (!isEnabled) {
+                console.log('SMTP sending disabled. Drop sending activation mail.');
+                return false;
+            }
             await this.transporter.sendMail({
                 from: process.env.SMTP_USER,
                 to: email,
@@ -21,6 +23,7 @@ export default class MailService {
                 test: '',
                 html: `<div>Visit a link for account activation:<br /><a href="${activationLink}">${activationLink}</a></div>`
             });
+            return true;
         }
         catch (err) {
             console.log(err);

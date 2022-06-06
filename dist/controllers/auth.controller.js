@@ -1,9 +1,11 @@
 import { UserService } from '../services/user.service.js';
+import { TokenService } from '../services/token.service.js';
 export default class AuthController {
     static async registration(req, res, next) {
         try {
             const { email, password } = req.body;
             const userData = await UserService.registration(email, password);
+            res.cookie('refreshToken', userData.refreshToken, { maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true });
             return res.json(userData);
         }
         catch (err) {
