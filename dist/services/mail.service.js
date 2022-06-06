@@ -1,15 +1,21 @@
 import nodemailer from 'nodemailer';
-export default class MailService {
-    static transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: process.env.SMTP_PORT,
-        secure: false,
-        auth: {
-            user: 'freevasya@gmail.com',
-            pass: 'gitzqvqdvhgueybu'
-        }
-    });
-    static async sendActivationMail(email, activationLink) {
+import { config as loadEnv } from 'dotenv';
+loadEnv();
+class MailService {
+    transporter;
+    constructor() {
+        console.log(process.env.SMTP_PORT);
+        this.transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: process.env.SMTP_PORT,
+            secure: false,
+            auth: {
+                user: 'freevasya@gmail.com',
+                pass: 'gitzqvqdvhgueybu'
+            }
+        });
+    }
+    async sendActivationMail(email, activationLink) {
         try {
             const isEnabled = parseInt(process.env.SMTP_SENDING);
             if (!isEnabled) {
@@ -30,4 +36,6 @@ export default class MailService {
         }
     }
 }
+const instance = new MailService();
+export { instance as MailService };
 //# sourceMappingURL=mail.service.js.map

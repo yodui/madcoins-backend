@@ -5,7 +5,7 @@ import { pool as db } from '../db/db.js';
 import { IUser } from '../classes/Interfaces.js';
 import UserDto from '../dtos/user.dto.js';
 
-import MailService from '../services/mail.service.js';
+import { MailService } from '../services/mail.service.js';
 import { TokenService, ITokensPair } from '../services/token.service.js';
 
 interface IRegistrationResponse extends ITokensPair {
@@ -46,7 +46,10 @@ class UserService {
 
         if(false !== user) {
 
-            await MailService.sendActivationMail(email, activationLink);
+            const fullLink = `${process.env.API_URL}/api/activate/${activationLink}`;
+            console.log('Full link: ', fullLink);
+
+            await MailService.sendActivationMail(email, fullLink);
 
             // create Data Transfer Object from user
             const userDto = new UserDto(user);

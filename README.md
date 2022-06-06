@@ -34,7 +34,19 @@ Application have three working modes:
 ### Exchanges and pairs for watching
 
 If you run application in *watcher* mode - you will subscribe to change coin prices, this changes will be saved in database.     
-You can set exchanges for watching and pairs in [/config/default.json](/config/default.json) file. 
+You can set exchanges for watching and pairs in [/config/default.json](/config/default.json) file for example. 
+
+#### Use app instances
+
+For watching rates you can use few of instances of application, for example: first instance for *Poloniex*, second for *Kraken* exchanges.
+For every instance you can set batch of exchanges and pairs via different config files. For run each of instance with different config files - use `NODE_APP_INSTANCE` variable in command line.
+
+**Example:**
+
+`NODE_APP_INSTANCE=1 node dist/index.js -mode watcher` - run with `/config/default-1.json` file
+
+`node dist/index.js -mode watcher` - run with `/config/default.json`
+
 
 ### Development scripts
 | Command | Description |

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
+
 import {ExchangeRouter} from './routers/exchange.router.js';
 import {TradingPairRouter} from "./routers/tradingPair.router.js";
 import {TradeRouter} from "./routers/trade.router.js";
@@ -12,6 +13,7 @@ import BitfinexApi from "./classes/exchange/bitfinex/BitfinexApi.js";
 import {ECoin, ITradingPair} from "./classes/Interfaces.js";
 import {AppMode, env} from "./utils/Environment.js";
 
+console.log(env);
 
 if([AppMode.julius, AppMode.api].includes(env.mode)) {
     const app = express();

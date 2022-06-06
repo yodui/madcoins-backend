@@ -1,8 +1,4 @@
 import config from 'config';
-import {config as loadEnv} from 'dotenv';
-
-// get default environment variables from .env file
-loadEnv();
 
 // Available command line arguments (TS style):
 // -mode: watcher|api|julius - global app mode

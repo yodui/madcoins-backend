@@ -8,6 +8,7 @@ import { AuthRouter } from "./routers/auth.router.js";
 import BitfinexApi from "./classes/exchange/bitfinex/BitfinexApi.js";
 import { ECoin } from "./classes/Interfaces.js";
 import { AppMode, env } from "./utils/Environment.js";
+console.log(env);
 if ([AppMode.julius, AppMode.api].includes(env.mode)) {
     const app = express();
     app.use(express.json());

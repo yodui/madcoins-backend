@@ -1,22 +1,30 @@
 import nodemailer from 'nodemailer';
+import {config as loadEnv} from 'dotenv';
 
-export default class MailService {
+// get default environment variables from .env file
+loadEnv();
+
+class MailService {
+
+    private transporter;
+
+    constructor() {
+
+        console.log(process.env.SMTP_PORT);
+
+        this.transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: process.env.SMTP_PORT,
+            secure: false,
+            auth: {
+                user: 'freevasya@gmail.com',//process.env.SMTP_USER,
+                pass: 'gitzqvqdvhgueybu'//process.env.SMTP_PASSWORD
+            }
+        });
+    }
 
 
-
-
-    private static transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: process.env.SMTP_PORT,
-        secure: false,
-        auth: {
-            user: 'freevasya@gmail.com',//process.env.SMTP_USER,
-            pass: 'gitzqvqdvhgueybu'//process.env.SMTP_PASSWORD
-        }
-    });
-
-
-    static async sendActivationMail(email:string, activationLink:string): Promise<boolean> {
+    async sendActivationMail(email:string, activationLink:string): Promise<boolean> {
         try {
 
             const isEnabled = parseInt(process.env.SMTP_SENDING);
@@ -42,3 +50,7 @@ export default class MailService {
     }
 
 }
+
+const instance = new MailService();
+
+export {instance as MailService};

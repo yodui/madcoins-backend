@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import { v4 as getActivationLink } from 'uuid';
 import { pool as db } from '../db/db.js';
 import UserDto from '../dtos/user.dto.js';
-import MailService from '../services/mail.service.js';
+import { MailService } from '../services/mail.service.js';
 import { TokenService } from '../services/token.service.js';
 class UserService {
     static SALT = 8;
@@ -22,7 +22,9 @@ class UserService {
         const defaultActive = 0;
         const user = await this.insertUser(email, password, defaultActive, activationLink);
         if (false !== user) {
-            await MailService.sendActivationMail(email, activationLink);
+            const fullLink = `${process.env.API_URL}/api/activate/${activationLink}`;
+            console.log('Full link: ', fullLink);
+            await MailService.sendActivationMail(email, fullLink);
             const userDto = new UserDto(user);
             const tokens = TokenService.generateTokens(userDto);
             TokenService.saveToken(user.userId, tokens.refreshToken);

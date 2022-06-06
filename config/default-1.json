@@ -1,0 +1,7 @@
+{
+  "exchanges": {
+    "bitfinex": ["btcusdt", "btceth"],
+    "poloniex": ["btcusdt"],
+    "kraken": ["adausdt","solusdt"]
+  }
+}
