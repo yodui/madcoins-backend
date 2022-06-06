@@ -1,10 +1,13 @@
-import {config} from 'dotenv';
+import config from 'config';
+import {config as loadEnv} from 'dotenv';
+
+// get default environment variables from .env file
+loadEnv();
 
 // Available command line arguments (TS style):
 // -mode: watcher|api|julius - global app mode
-// -port: number - number of port for RESTAPI
+// -port: number - number of port for REST API
 // -ex: Array<string> - list of exchange tickers for watching (space separator)
-// -pairs: Array<string> - list of pairs for watching (space separator)
 enum AppMode {
     watcher = 'watcher',
     api = 'api',
@@ -14,18 +17,20 @@ enum AppMode {
 interface IAppInstanceParams {
     mode: AppMode,
     port: number,
-    ex: Array<string>,
-    pairs: Array<string>
+    watch: Array<string>,
 }
 
-// get default environment variables from .env file
-config();
+console.log(config.util.getEnv());
+
+let exchanges;
+if(config.has('exchanges')) {
+    exchanges = config.get('exchanges');
+}
 
 const env:IAppInstanceParams = {
     mode: Object.keys(AppMode).includes(process.env.mode) ? AppMode[process.env.mode] : AppMode.julius,
     port: parseInt(process.env.PORT) || 3000, // default
-    ex: process.env.exchanges ? process.env.exchanges.split(',') : [], // exchanges for watching
-    pairs: process.env.pairs ? process.env.pairs.split(',') : [] // pairs for watching
+    watch: exchanges ? exchanges : [] // exchanges and pairs for watching
 };
 
 // get command line parameters
@@ -41,8 +46,6 @@ argv.forEach(val => {
     if(isParam.test(val)) {
         // this is parameter
         currentParam = val.slice(1);
-        // if this is exchanges or pairs - reset list
-        if(['ex','pairs'].includes(currentParam)) env[currentParam] = [];
     } else if(currentParam !== false) {
         // add value to mounted parameter
         switch(currentParam) {
@@ -56,16 +59,8 @@ argv.forEach(val => {
                 // save port value
                 env.port = parseInt(val);
                 break;
-            case 'ex':
-                // add exchange to watch list
-                env.ex.push(val.toString());
-                break;
-            case 'pairs':
-                env.pairs.push(val.toString());
-                break;
         }
     }
 })
 
 export { env, AppMode };
-

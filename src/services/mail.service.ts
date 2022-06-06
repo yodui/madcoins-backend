@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer';
 export default class MailService {
 
 
+
+
     private static transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: process.env.SMTP_PORT,
@@ -14,12 +16,15 @@ export default class MailService {
     });
 
 
-    static async sendActivationMail(email:string, activationLink:string) {
-        console.log(process.env.SMTP_HOST,' ', process.env.SMTP_PORT,' ', process.env.SMTP_USER,' ', process.env.SMTP_PASSWORD);
-        console.log(this.transporter.sendMail);
-        console.log('email: ', email);
-
+    static async sendActivationMail(email:string, activationLink:string): Promise<boolean> {
         try {
+
+            const isEnabled = parseInt(process.env.SMTP_SENDING);
+            if(!isEnabled) {
+                console.log('SMTP sending disabled. Drop sending activation mail.');
+                return false;
+            }
+
             await this.transporter.sendMail({
                 from: process.env.SMTP_USER,
                 to: email,
@@ -27,10 +32,12 @@ export default class MailService {
                 test: '',
                 html: `<div>Visit a link for account activation:<br /><a href="${activationLink}">${activationLink}</a></div>`
             });
+
+            return true;
+
         } catch (err) {
             console.log(err);
         }
-
 
     }
 

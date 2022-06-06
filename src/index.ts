@@ -10,7 +10,7 @@ import {AuthRouter} from "./routers/auth.router.js";
 import BitfinexApi from "./classes/exchange/bitfinex/BitfinexApi.js";
 
 import {ECoin, ITradingPair} from "./classes/Interfaces.js";
-import {AppMode, env} from "./utils/appEnvironment.js";
+import {AppMode, env} from "./utils/Environment.js";
 
 
 if([AppMode.julius, AppMode.api].includes(env.mode)) {

@@ -8,9 +8,7 @@ export default class AuthController {
             const {email, password} = req.body;
             const userData = await UserService.registration(email, password);
             // set httpOnly cookie
-            //console.log('set cookie...', TokenService.refreshTokenExpiresInDays);
-            //res.cookie('refreshToken');
-            //res.cookie('refreshToken', 'test', {maxAge: 3600000});
+            res.cookie('refreshToken', userData.refreshToken, {maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
             return res.json(userData);
         } catch (err) {
             res.json({ error: err.message })
