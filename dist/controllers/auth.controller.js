@@ -1,4 +1,4 @@
-import UserService from '../services/user.service.js';
+import { UserService } from '../services/user.service.js';
 export default class AuthController {
     static async registration(req, res, next) {
         try {
@@ -7,7 +7,7 @@ export default class AuthController {
             return res.json(userData);
         }
         catch (err) {
-            console.log(err);
+            res.json({ error: err.message });
         }
     }
     static async login(req, res, next) {

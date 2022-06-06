@@ -1,4 +1,5 @@
-import UserService from '../services/user.service.js';
+import { UserService, IRegistrationResponse } from '../services/user.service.js';
+import { TokenService } from '../services/token.service.js';
 
 export default class AuthController {
 
@@ -6,9 +7,13 @@ export default class AuthController {
         try {
             const {email, password} = req.body;
             const userData = await UserService.registration(email, password);
+            // set httpOnly cookie
+            //console.log('set cookie...', TokenService.refreshTokenExpiresInDays);
+            //res.cookie('refreshToken');
+            //res.cookie('refreshToken', 'test', {maxAge: 3600000});
             return res.json(userData);
         } catch (err) {
-            console.log(err);
+            res.json({ error: err.message })
         }
     }
 

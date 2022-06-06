@@ -37,6 +37,11 @@ interface ITrade {
     rate: number // Funding rate of the trade
 }
 
+interface IJsonError {
+    error: string,
+    code?: number
+}
+
 interface IUser {
     userId?: number|undefined, // user ID
     email: string, // user email and login
@@ -51,5 +56,5 @@ interface IToken {
 
 }
 
-export { ITradingPair, ITrade, IExchange, IUser, ECoin };
+export { ITradingPair, ITrade, IExchange, IUser, ECoin, IJsonError };
 

@@ -3,19 +3,19 @@ import { v4 as getActivationLink } from 'uuid';
 import { pool as db } from '../db/db.js';
 import UserDto from '../dtos/user.dto.js';
 import MailService from '../services/mail.service.js';
-import TokenService from '../services/token.service.js';
-export default class UserService {
+import { TokenService } from '../services/token.service.js';
+class UserService {
     static SALT = 8;
     static SQL_GET_ACTIVE_USER_BY_EMAIL = 'SELECT * FROM users WHERE email = $1 AND active = 1';
     static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationLink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationLink';
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
     static async registration(email, password) {
         if (false !== await this.findActiveUserByEmail(email)) {
-            return { error: `User with email ${email} already exists` };
+            throw new TypeError(`User with email ${email} already exists`);
         }
         await this.clearUnactiveUsersByEmail(email);
-        if (password == undefined) {
-            return { error: `Password requires for registration` };
+        if (password === undefined || !password) {
+            throw new TypeError('Password requires for registration');
         }
         const hashPassword = await bcrypt.hash(password, this.SALT);
         const activationLink = getActivationLink();
@@ -23,15 +23,13 @@ export default class UserService {
         const user = await this.insertUser(email, password, defaultActive, activationLink);
         if (false !== user) {
             await MailService.sendActivationMail(email, activationLink);
-            const jwtPayload = { userId: user.userId, email: user.email };
             const userDto = new UserDto(user);
             const tokens = TokenService.generateTokens(userDto);
-            console.log('save token...');
             TokenService.saveToken(user.userId, tokens.refreshToken);
             return { ...tokens, user: userDto };
         }
         else {
-            return { error: `Registration error` };
+            throw new TypeError('Registration error');
         }
     }
     static async clearUnactiveUsersByEmail(email) {
@@ -72,4 +70,5 @@ export default class UserService {
         return false;
     }
 }
+export { UserService };
 //# sourceMappingURL=user.service.js.map

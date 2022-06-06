@@ -6,10 +6,14 @@ import { IUser } from '../classes/Interfaces.js';
 import UserDto from '../dtos/user.dto.js';
 
 import MailService from '../services/mail.service.js';
-import TokenService from '../services/token.service.js';
+import { TokenService, ITokensPair } from '../services/token.service.js';
+
+interface IRegistrationResponse extends ITokensPair {
+    user: UserDto
+}
 
 
-export default class UserService {
+class UserService {
 
     private static SALT = 8;
 
@@ -20,37 +24,41 @@ export default class UserService {
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
 
 
-    static async registration(email:string, password:string) {
+    static async registration(email:string, password:string): Promise<IRegistrationResponse> {
+
         if(false !== await this.findActiveUserByEmail(email)) {
             // active user with email is already exists
-            return { error: `User with email ${email} already exists` }
+            throw new TypeError(`User with email ${email} already exists`);
         }
+
         // clear all unactive users with same email
         await this.clearUnactiveUsersByEmail(email);
+
         // check exists password
-        if(password == undefined) {
-            return { error: `Password requires for registration` }
+        if(password === undefined || !password) {
+            throw new TypeError('Password requires for registration');
         }
         const hashPassword = await bcrypt.hash(password, this.SALT);
         const activationLink = getActivationLink(); // ex.: 99770c6c-d8e8-4782-ac86-25f7fd32ccdf
         const defaultActive = 0;
+
         const user = await this.insertUser(email, password, defaultActive, activationLink);
+
         if(false !== user) {
 
             await MailService.sendActivationMail(email, activationLink);
 
-            const jwtPayload = { userId: user.userId, email: user.email };
-
+            // create Data Transfer Object from user
             const userDto = new UserDto(user);
 
             const tokens = TokenService.generateTokens(userDto);
             // save refresh token in DB
-            console.log('save token...');
             TokenService.saveToken(user.userId, tokens.refreshToken);
 
             return {...tokens, user: userDto};
+
         } else {
-            return { error: `Registration error` }
+            throw new TypeError('Registration error');
         }
     }
 
@@ -100,3 +108,5 @@ export default class UserService {
     }
 
 }
+
+export { IRegistrationResponse, UserService };
