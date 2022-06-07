@@ -16,8 +16,6 @@ interface IAppInstanceParams {
     watch: Array<string>,
 }
 
-console.log(config.util.getEnv());
-
 let exchanges;
 if(config.has('exchanges')) {
     exchanges = config.get('exchanges');

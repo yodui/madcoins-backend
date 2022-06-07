@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
+import errorMiddleware from './middlewares/error-middleware.js';
 
 import {ExchangeRouter} from './routers/exchange.router.js';
 import {TradingPairRouter} from "./routers/tradingPair.router.js";
@@ -21,6 +22,8 @@ if([AppMode.julius, AppMode.api].includes(env.mode)) {
     app.use(cookieParser());
     app.use(cors());
     app.use('/api', [ExchangeRouter, TradingPairRouter, TradeRouter, AuthRouter]);
+    app.use(errorMiddleware);
+
     app.listen(env.port, () => console.log('Server started on port ' + env.port));
 }
 

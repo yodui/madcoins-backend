@@ -10,15 +10,13 @@ class MailService {
 
     constructor() {
 
-        console.log(process.env.SMTP_PORT);
-
         this.transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
+            host: process.env.SMTP_HOST,
             port: process.env.SMTP_PORT,
             secure: false,
             auth: {
-                user: 'freevasya@gmail.com',//process.env.SMTP_USER,
-                pass: 'gitzqvqdvhgueybu'//process.env.SMTP_PASSWORD
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD
             }
         });
     }

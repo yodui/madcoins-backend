@@ -5,6 +5,8 @@ import { pool as db } from '../db/db.js';
 import { IUser } from '../classes/Interfaces.js';
 import UserDto from '../dtos/user.dto.js';
 
+import ApiError from '../exceptions/api-error.js';
+
 import { MailService } from '../services/mail.service.js';
 import { TokenService, ITokensPair } from '../services/token.service.js';
 
@@ -23,12 +25,70 @@ class UserService {
 
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
 
+    static SQL_GET_USER_BY_ACTIVATION_LINK = 'SELECT * FROM users WHERE activationLink = $1';
+
+    static SQL_ACTIVATE_USER_BY_ID = 'UPDATE users SET active = 1 WHERE userId = $1 RETURNING userId, email, active, activationLink, registerdate';
+
+    static SQL_FIND_ACTIVE_USER_BY_EMAIL_AND_PASSWORD = 'SELECT * FROM users WHERE active = 1 AND email = $1 AND password = $2';
+
+
+    static async findUserByActivationLink(activationLink:string): Promise<IUser|false> {
+        const result = await db.query(this.SQL_GET_USER_BY_ACTIVATION_LINK, [activationLink]);
+        if(result.rows.length) {
+            return this.mapFieldsToProps(result.rows[0]);
+        }
+        return false;
+    }
+
+
+    static async login(email: string, password: string): Promise<IUser|false> {
+        const hashPassword = await bcrypt.hash(password, this.SALT);
+        const result = await db.query(this.SQL_FIND_ACTIVE_USER_BY_EMAIL_AND_PASSWORD, [email, hashPassword]);
+        console.log(result);
+        return false;
+    }
+
+
+    static async activateUser(activationLink: string): Promise<IUser|false> {
+        const user = await this.findUserByActivationLink(activationLink);
+        if(user !== false) {
+            if(user.active) {
+                throw ApiError.LogicError('User is already active');
+            }
+            // activate user by id
+            return await this.activateUserById(user.userId);
+        }
+        return false;
+    }
+
+
+    static async activateUserById(userId: number): Promise<IUser|false> {
+        const result = await db.query(this.SQL_ACTIVATE_USER_BY_ID, [userId]);
+        if(result.rows.length) {
+            return this.mapFieldsToProps(result.rows[0])
+        }
+        return false;
+    }
+
+
+    private static mapFieldsToProps(row): IUser {
+        return {
+            userId: row.userid,
+            email: row.email,
+            active: row.active,
+            password: row.password,
+            tsDateReg: row.registerdate,
+            tsDateLastVisit: row.lastvisitdate,
+            activationLink: row.activationlink
+        }
+    }
+
 
     static async registration(email:string, password:string): Promise<IRegistrationResponse> {
 
         if(false !== await this.findActiveUserByEmail(email)) {
             // active user with email is already exists
-            throw new TypeError(`User with email ${email} already exists`);
+            throw ApiError.LogicError(`User with email ${email} already exists`);
         }
 
         // clear all unactive users with same email
@@ -36,7 +96,7 @@ class UserService {
 
         // check exists password
         if(password === undefined || !password) {
-            throw new TypeError('Password requires for registration');
+            throw ApiError.LogicError('Password requires for registration');
         }
         const hashPassword = await bcrypt.hash(password, this.SALT);
         const activationLink = getActivationLink(); // ex.: 99770c6c-d8e8-4782-ac86-25f7fd32ccdf
@@ -47,8 +107,6 @@ class UserService {
         if(false !== user) {
 
             const fullLink = `${process.env.API_URL}/api/activate/${activationLink}`;
-            console.log('Full link: ', fullLink);
-
             await MailService.sendActivationMail(email, fullLink);
 
             // create Data Transfer Object from user
@@ -61,7 +119,7 @@ class UserService {
             return {...tokens, user: userDto};
 
         } else {
-            throw new TypeError('Registration error');
+            throw ApiError.BadRequest('Registration error');
         }
     }
 
@@ -80,13 +138,7 @@ class UserService {
                 const row = result.rows[index];
                 const dateCreate = new Date(row.registerdate);
                 // mapping
-                users.push({
-                    userId: row.userid,
-                    email: row.email,
-                    active: row.active,
-                    tsDateReg: BigInt(dateCreate.getTime()),
-                    activationLink: row.activationlink
-                });
+                users.push(this.mapFieldsToProps(row));
             }
             return users;
         }
