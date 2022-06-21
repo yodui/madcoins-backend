@@ -23,10 +23,14 @@ export default class AuthController {
                 return next(ApiError.BadRequest('Validation error', loginErrors.array()));
             }
             const { email, password } = req.body;
-            console.log(email, password);
-            if (false !== await UserService.login(email, password)) {
+            const user = await UserService.login(email, password);
+            if (false !== user) {
+                const userDto = new UserDto(user);
+                return res.json({ 'result': 'ok', 'user': userDto });
             }
-            return res.json({ 'result': 'ok' });
+            else {
+                return next(ApiError.BadRequest('Login validation error'));
+            }
         }
         catch (err) {
             next(err);

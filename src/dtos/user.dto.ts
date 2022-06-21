@@ -11,7 +11,6 @@ export default class UserDto {
         this.userId = user.userId;
         this.email = user.email;
         this.active = user.active;
-        this.activationLink = user.activationLink;
     }
 
 }

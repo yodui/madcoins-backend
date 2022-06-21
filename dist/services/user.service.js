@@ -8,6 +8,7 @@ import { TokenService } from '../services/token.service.js';
 class UserService {
     static SALT = 8;
     static SQL_GET_ACTIVE_USER_BY_EMAIL = 'SELECT * FROM users WHERE email = $1 AND active = 1';
+    static SQL_GET_USER_PASS_BY_USER_ID = 'SELECT password FROM users WHERE userId = $1';
     static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationLink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationLink';
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
     static SQL_GET_USER_BY_ACTIVATION_LINK = 'SELECT * FROM users WHERE activationLink = $1';
@@ -21,9 +22,22 @@ class UserService {
         return false;
     }
     static async login(email, password) {
-        const hashPassword = await bcrypt.hash(password, this.SALT);
-        const result = await db.query(this.SQL_FIND_ACTIVE_USER_BY_EMAIL_AND_PASSWORD, [email, hashPassword]);
-        console.log(result);
+        const usersByEmail = await this.findActiveUserByEmail(email);
+        if (false === usersByEmail) {
+            return false;
+        }
+        const user = usersByEmail[0];
+        const hashPassword = await this.getPassByUserId(user.userId);
+        if (true === await bcrypt.compare(password, hashPassword)) {
+            return this.mapFieldsToProps(user);
+        }
+        return false;
+    }
+    static async getPassByUserId(userId) {
+        const result = await db.query(this.SQL_GET_USER_PASS_BY_USER_ID, [userId]);
+        if (result.rowCount) {
+            return result.rows[0].password;
+        }
         return false;
     }
     static async activateUser(activationLink) {
@@ -65,7 +79,7 @@ class UserService {
         const hashPassword = await bcrypt.hash(password, this.SALT);
         const activationLink = getActivationLink();
         const defaultActive = 0;
-        const user = await this.insertUser(email, password, defaultActive, activationLink);
+        const user = await this.insertUser(email, hashPassword, defaultActive, activationLink);
         if (false !== user) {
             const fullLink = `${process.env.API_URL}/api/activate/${activationLink}`;
             await MailService.sendActivationMail(email, fullLink);

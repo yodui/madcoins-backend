@@ -21,6 +21,8 @@ class UserService {
 
     static SQL_GET_ACTIVE_USER_BY_EMAIL = 'SELECT * FROM users WHERE email = $1 AND active = 1';
 
+    static SQL_GET_USER_PASS_BY_USER_ID = 'SELECT password FROM users WHERE userId = $1';
+
     static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationLink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationLink';
 
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
@@ -42,9 +44,27 @@ class UserService {
 
 
     static async login(email: string, password: string): Promise<IUser|false> {
-        const hashPassword = await bcrypt.hash(password, this.SALT);
-        const result = await db.query(this.SQL_FIND_ACTIVE_USER_BY_EMAIL_AND_PASSWORD, [email, hashPassword]);
-        console.log(result);
+        // get user by email
+        const usersByEmail = await this.findActiveUserByEmail(email);
+        if(false === usersByEmail) {
+            return false;
+        }
+        const user = usersByEmail[0];
+        const hashPassword = await this.getPassByUserId(user.userId);
+        if(true === await bcrypt.compare(password, hashPassword)) {
+            // success
+            return this.mapFieldsToProps(user);
+        }
+        // error
+        return false;
+    }
+
+
+    static async getPassByUserId(userId: number): Promise<string|boolean> {
+        const result = await db.query(this.SQL_GET_USER_PASS_BY_USER_ID, [userId]);
+        if(result.rowCount) {
+            return result.rows[0].password;
+        }
         return false;
     }
 
@@ -102,7 +122,7 @@ class UserService {
         const activationLink = getActivationLink(); // ex.: 99770c6c-d8e8-4782-ac86-25f7fd32ccdf
         const defaultActive = 0;
 
-        const user = await this.insertUser(email, password, defaultActive, activationLink);
+        const user = await this.insertUser(email, hashPassword, defaultActive, activationLink);
 
         if(false !== user) {
 

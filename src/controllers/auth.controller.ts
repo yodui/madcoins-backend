@@ -7,7 +7,6 @@ import UserDto from '../dtos/user.dto.js';
 
 export default class AuthController {
 
-
     static async registration(req, res, next) {
         try {
 
@@ -25,7 +24,6 @@ export default class AuthController {
         }
     }
 
-
     static async login(req, res, next) {
         try {
             const loginErrors = validationResult(req);
@@ -33,12 +31,14 @@ export default class AuthController {
                 return next(ApiError.BadRequest('Validation error', loginErrors.array()));
             }
             const {email, password} = req.body;
-            console.log(email, password);
-            // check exists active user with same email/pass
-            if(false !== await UserService.login(email, password)) {
-
+            // check exists active user with same email and pass
+            const user = await UserService.login(email, password);
+            if(false !== user) {
+                const userDto = new UserDto(user);
+                return res.json({'result':'ok', 'user': userDto});
+            } else {
+                return next(ApiError.BadRequest('Login validation error'));
             }
-            return res.json({'result':'ok'});
         } catch(err) {
             next(err);
         }

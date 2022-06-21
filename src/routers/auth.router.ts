@@ -18,6 +18,7 @@ AuthRouter.post('/login', AuthController.login);
 // user logout
 AuthRouter.post('/logout', AuthController.logout);
 
+// user test
 AuthRouter.get('/test', AuthController.getTestData);
 
 
