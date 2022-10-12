@@ -1,5 +1,4 @@
 import ws from "ws";
-import * as fs from "fs";
 
 import axios from "axios";
 import {ITradingPair, ITrade, ECoin} from "../../Interfaces.js";
@@ -10,7 +9,7 @@ import TradeService from "../../../services/trade.service.js";
 
 class BitfinexApi extends Exchange {
 
-    static exTicker = 'BITFINEX';
+    static exTicker:string = 'BITFINEX';
 
     // Ticker conversation below app and exchange formats
     // For what? Some times exchange invent unique ticker names, ex. UST instead of USDT
@@ -29,7 +28,7 @@ class BitfinexApi extends Exchange {
     static URI_PUBLIC:string = 'https://api-pub.bitfinex.com/v2/';
 
     // high level overview of the state of the market. Ex. ?symbols=tBTCUSD
-    GET_TICKERS = 'tickers';
+    GET_TICKERS:string = 'tickers';
 
     // --------------------
     // Web socket endpoint
@@ -43,27 +42,35 @@ class BitfinexApi extends Exchange {
     // configs
     static URI_CONF_LIST_PAIRS:string = 'conf/pub:list:pair:exchange';
 
-    static loadPairs() {
+    static async loadMarkets(): Promise<Array<ITradingPair>> {
         return new Promise<Array<ITradingPair>>(async (resolve, reject) => {
             const endpoint: string = this.URI_PUBLIC + this.URI_CONF_LIST_PAIRS;
             try {
-                let response = await axios.get(endpoint);
+
+                let axiosInstance = axios.create();
+                axiosInstance.interceptors.response.use(null, error => {
+                    console.log('Error loading ' + error.config.url + ' error code: ' + error.response.data.code);
+                    return Promise.reject(error);
+                });
+
+                const response = await axiosInstance.get(endpoint);
+
                 let pairs:Array<ITradingPair> = [];
 
                 const rawPairs = response.data[0];
                 // parse pairs
-                rawPairs.map(strPair => {
-                    let sepPos = strPair.indexOf(':');
+                rawPairs.map(market => {
+                    let sepPos = market.indexOf(':');
                     let rawPair:ITradingPair = [undefined, undefined];
 
                     if(sepPos !== -1) {
                         // we have separator in pair string
-                        rawPair[0] = strPair.slice(0, sepPos);
-                        rawPair[1] = strPair.slice(sepPos + 1);
+                        rawPair[0] = market.slice(0, sepPos);
+                        rawPair[1] = market.slice(sepPos + 1);
                     } else {
                         // we have standard names in pair, 3 letters for each
-                        rawPair[0] = strPair.slice(0, 3);
-                        rawPair[1] = strPair.slice(3);
+                        rawPair[0] = market.slice(0, 3);
+                        rawPair[1] = market.slice(3);
                     }
                     const pair = this.toAppFormat(rawPair, this.convertRules);
                     if(this.existsTickers(pair)) {
@@ -71,7 +78,8 @@ class BitfinexApi extends Exchange {
                     }
                 })
 
-                await this.cachePairs(pairs);
+                await this.cachePairs(pairs, this.exTicker);
+
                 resolve(pairs);
 
             } catch (err) {
@@ -80,22 +88,13 @@ class BitfinexApi extends Exchange {
         })
     }
 
-    static async cachePairs(pairs): Promise<boolean> {
-        // cache pairs
-        const buffer = JSON.stringify(pairs);
-        // save cache
-        await fs.writeFile(new URL(this.PAIRS_CACHE, import.meta.url), buffer, { flag: "w"}, err => {
-            if(err) return false;
-        });
-        return true;
-    }
 
-    static getPairs (forceUpdate = false) {
+    static getPairs (forceUpdate = false): Promise<Array<ITradingPair>> {
         return new Promise(async (resolve, reject) => {
             try {
                 if(!this.pairs.length || forceUpdate === true) {
                     // get and save trading pairs
-                    this.pairs = await this.loadPairs();
+                    this.pairs = await this.loadMarkets();
                 }
                 resolve(this.pairs);
             } catch (err) {
@@ -104,7 +103,7 @@ class BitfinexApi extends Exchange {
         });
     }
 
-    static getPairsByCoin(coinTicker: ECoin) {
+    static getPairsByCoin(coinTicker: ECoin): Promise<Array<ITradingPair>> {
         return new Promise(async (resolve, reject) => {
             try {
                 const pairs = await this.getPairs();

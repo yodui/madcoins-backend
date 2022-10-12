@@ -17,6 +17,7 @@ enum ECoin {
     ADA = 'ADA', // Cardano
     DOGE = 'DOGE', // Dogecoin
     DOT = 'DOT', // Polkadot
+    USDTEST = 'USDTEST' // Reserved for testing
 }
 
 
