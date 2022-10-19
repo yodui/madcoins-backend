@@ -2,8 +2,9 @@ import TradeService from "../services/trade.service.js";
 
 export default class TradeController {
 
-    static async getTrades() {
-        console.log('Get trades...');
+    static async getTrades(req, res) {
+        const listOfTrades = await TradeService.getTrades(20);
+        res.status(200).send(listOfTrades);
     }
 
     static async dropTrades(req, res) {
@@ -13,6 +14,12 @@ export default class TradeController {
 
     static async deleteTrade() {
         console.log('Delete trade by id...');
+    }
+
+
+    static async getCountTrades(req, res) {
+        const countTrades = await TradeService.countTrades();
+        res.status(200).send(countTrades);
     }
 
 }

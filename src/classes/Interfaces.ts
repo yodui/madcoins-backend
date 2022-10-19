@@ -1,6 +1,15 @@
 interface ITradingPair extends Array<string|undefined> {
-    0: ECoin|undefined, // from
-    1: ECoin|undefined // to
+    0: ECoin|undefined, // base coin ticker
+    1: ECoin|undefined, // quote coin ticker
+}
+
+interface IMarket {
+    marketId?: number, // market id
+    baseCoinId: number, // base coin id
+    quoteCoinId: number, // quote coin id
+    tradingPair: ITradingPair, // trading pair (tickers)
+    exId: number, // exchange id
+    exTicker: string|undefined // exchange ticker
 }
 
 enum ECoin {
@@ -23,19 +32,22 @@ enum ECoin {
 
 interface IExchange {
     exId?: number|undefined, // exchange id
+    ticker: string,
     name: string,
     descr: string
 }
 
 interface ITrade {
     tradeId?: number|undefined, // platform trade id
+    exId: number|undefined, // exchange id
     exTicker: string, // exchange ticker
     pair: ITradingPair, // trading pair
+    marketId?: number|undefined, // market Id
     exTradeId?: number|undefined, // exchange trade id
     mts: number, // milliseconds time stamp (from exchange)
     amount: number, // Amount bought (positive) or sold (negative)
-    price: number, // Price at which the trade was executed
-    rate: number // Funding rate of the trade
+    rate: number, // Funding rate of the trade
+    price?: number, // Price at which the trade was executed
 }
 
 interface IJsonError {
@@ -57,5 +69,5 @@ interface IToken {
 
 }
 
-export { ITradingPair, ITrade, IExchange, IUser, ECoin, IJsonError };
+export { ITradingPair, IMarket, ITrade, IExchange, IUser, ECoin, IJsonError };
 

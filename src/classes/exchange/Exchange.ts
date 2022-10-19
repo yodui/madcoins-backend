@@ -55,7 +55,7 @@ class Exchange {
 
             await fs.writeFile(cacheFile, buffer, err => {
                 if(err) {
-                    console.log(err);
+                    console.log('Error writing cache of pairs: ', err);
                     reject(false);
                 } else {
                     resolve(true);

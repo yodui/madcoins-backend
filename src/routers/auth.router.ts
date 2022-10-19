@@ -19,7 +19,7 @@ AuthRouter.post('/login', AuthController.login);
 AuthRouter.post('/logout', AuthController.logout);
 
 // user test
-AuthRouter.get('/test', AuthController.getTestData);
+AuthRouter.get('/users', AuthController.getTestData);
 
 
 export { AuthRouter };

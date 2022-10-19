@@ -1,9 +1,15 @@
 import ws from "ws";
 
 import axios from "axios";
-import {ITradingPair, ITrade, ECoin} from "../../Interfaces.js";
+import {ITradingPair, ITrade, ECoin, IMarket} from "../../Interfaces.js";
 import {Exchange, ETickerConvert} from '../Exchange.js';
+
 import TradeService from "../../../services/trade.service.js";
+import {CoinService} from "../../../services/coin.service.js";
+import MarketService from "../../../services/market.service.js";
+import ExchangeService from "../../../services/exchange.service.js";
+
+import asyncForeach from '../../../utils/asyncForeach.js';
 
 
 
@@ -103,6 +109,7 @@ class BitfinexApi extends Exchange {
         });
     }
 
+
     static getPairsByCoin(coinTicker: ECoin): Promise<Array<ITradingPair>> {
         return new Promise(async (resolve, reject) => {
             try {
@@ -115,9 +122,10 @@ class BitfinexApi extends Exchange {
         })
     }
 
-    static async subscribeToTrades (pair:ITradingPair, onMessageHandler) {
+
+    static async subscribeToTrades (market:IMarket, onMessageHandler) {
         // convert pair to exchange format
-        const exPair = this.toExchangeFormat(pair, this.convertRules);
+        const exPair = this.toExchangeFormat(market.tradingPair, this.convertRules);
         const msg = JSON.stringify({
             event: 'subscribe',
             channel: 'trades',
@@ -140,16 +148,16 @@ class BitfinexApi extends Exchange {
                 const raw = data[2];
                 if(undefined !== raw) {
                     const trades:Array<ITrade> = [];
-                    let trade = {
-                        exTicker: this.exTicker,
-                        pair: pair,
+                    let trade: ITrade = {
+                        marketId: market.marketId,
+                        exId: market.exId,
+                        exTicker: market.exTicker,
+                        pair: market.tradingPair,
                         exTradeId: raw[0],
                         mts: raw[1],
                         amount: raw[2],
                         rate: raw[3]
                     }
-
-                    console.log('');
                     onMessageHandler(trade);
                 }
 
@@ -157,20 +165,65 @@ class BitfinexApi extends Exchange {
         })
     }
 
-    static watchTrades(tradingPairs: Array<ITradingPair>): void {
-        tradingPairs.map(async pair => {
-            // check exists in exchange
-            const isExists = await this.existsOnExchange(pair);
-            if (false === isExists) {
-                console.log(pair, ' - pair is not exists');
-            } else {
-                console.log(pair, ' - subscribe to pair ');
-                this.subscribeToTrades(pair, (trade: ITrade) => {
-                    TradeService.saveTrade(trade);
-                })
-            }
 
+    static watchTrades(tradingPairs: Array<ITradingPair>) {
+
+        asyncForeach(tradingPairs, async (pair) => {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // check exists in exchange
+                    const isExists = await this.existsOnExchange(pair);
+
+                    if (false === isExists) {
+                        console.log(pair, ' - pair is not exists on ', this.exTicker);
+                    } else {
+
+                        const coinsId = await CoinService.createCoinsFromPair(pair);
+
+                        const exchangeId = await ExchangeService.findExchangeByTicker(this.exTicker);
+                        if(false === exchangeId) {
+                            throw new Error('Can\'t find exchnage by ticker ' + this.exTicker);
+                        }
+
+                        // fint market in DB
+                        let marketId = await MarketService.findMarket(coinsId, exchangeId);
+
+                        const market: IMarket = {
+                            exId: exchangeId,
+                            exTicker: this.exTicker,
+                            baseCoinId: coinsId[0],
+                            quoteCoinId: coinsId[1],
+                            tradingPair: pair
+                        };
+
+                        if(marketId === false) {
+                            // market not found, create new
+                            marketId = await MarketService.createMarket(market);
+                        }
+
+                        if(typeof marketId === "number") {
+                            market.marketId = marketId;
+                        }
+
+                        console.log(pair, ' - subscribe to pair, marketID: ', marketId);
+                        await this.subscribeToTrades(market, (trade: ITrade) => {
+                            TradeService.saveTrade(trade);
+                        })
+                        resolve();
+                    }
+
+                }  catch(e) {
+                    console.log(e);
+                }
+            })
         });
+
+    }
+
+
+    static findPairId(pair:ITradingPair): number|boolean {
+
+        return false;
     }
 
     static async existsOnExchange(targetPair: ITradingPair): Promise<boolean> {

@@ -19,6 +19,8 @@ class UserService {
 
     private static SALT = 8;
 
+    static SQL_GET_USERS = 'SELECT * FROM users ORDER BY userId DESC';
+
     static SQL_GET_ACTIVE_USER_BY_EMAIL = 'SELECT * FROM users WHERE email = $1 AND active = 1';
 
     static SQL_GET_USER_PASS_BY_USER_ID = 'SELECT password FROM users WHERE userId = $1';
@@ -32,6 +34,21 @@ class UserService {
     static SQL_ACTIVATE_USER_BY_ID = 'UPDATE users SET active = 1 WHERE userId = $1 RETURNING userId, email, active, activationLink, registerdate';
 
     static SQL_FIND_ACTIVE_USER_BY_EMAIL_AND_PASSWORD = 'SELECT * FROM users WHERE active = 1 AND email = $1 AND password = $2';
+
+
+    static async getUsers(): Promise<Array<IUser>> {
+        let users = [];
+        const passFieldName = 'password';
+        const result = await db.query(this.SQL_GET_USERS);
+        result.rows.forEach(row => {
+            // filter password
+            if(row.hasOwnProperty(passFieldName)) {
+                delete row[passFieldName];
+            }
+            users.push(this.mapFieldsToProps(row))
+        })
+        return users;
+    }
 
 
     static async findUserByActivationLink(activationLink:string): Promise<IUser|false> {

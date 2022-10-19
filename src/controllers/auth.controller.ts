@@ -77,7 +77,10 @@ export default class AuthController {
 
     static async getTestData(req, res, next) {
         try {
-            res.status(200).json(['test1', 123, 'query 345', -2]);
+            // get list of users
+            console.log('Get list of users...');
+            const users = await UserService.getUsers();
+            res.status(200).json(users);
         } catch(err) {
             next(err);
         }

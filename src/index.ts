@@ -33,43 +33,26 @@ try {
 
 
     if([AppMode.julius, AppMode.watcher].includes(env.mode)) {
-
-        //console.log(ECoin.ETH);
-
-
-        /*
-        const uri = 'https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange';
-        try {
-            let axiosInstance = axios.create();
-            axiosInstance.interceptors.response.use(null, error => {
-                return Promise.reject(error);
-            });
-
-            const res = await axiosInstance.get(uri);
-            console.log('OK!');
-
-        } catch (e) {
-            console.log('Err!');
-        }
-        */
-
-        //const ethPairs = await BitfinexApi.getPairsByCoin(ECoin.ETH);
+        
         PoloniexApi.loadMarkets();
         BitfinexApi.loadMarkets();
+        //const ethPairs = await BitfinexApi.getPairsByCoin(ECoin.ETH);
         //console.log(ethPairs);
 
-        /*
         const pairs: Array<ITradingPair> = [
             [ECoin.ETH, ECoin.USDT],
             [ECoin.BTC, ECoin.USDC],
             [ECoin.XRP, ECoin.BTC],
             [ECoin.ETH, ECoin.BTC],
-            [ECoin.DOGE, ECoin.BTC]
+            [ECoin.DOGE, ECoin.BTC],
+            [ECoin.EOS, ECoin.BTC],
+            [ECoin.SOL, ECoin.BTC]
         ];
         BitfinexApi.watchTrades(pairs);
-        */
+
+
     }
 
 } catch(e) {
-    //console.log(e);
+    console.log(e);
 }
