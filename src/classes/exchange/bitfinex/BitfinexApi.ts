@@ -206,14 +206,15 @@ class BitfinexApi extends Exchange {
                         }
 
                         console.log(pair, ' - subscribe to pair, marketID: ', marketId);
-                        await this.subscribeToTrades(market, (trade: ITrade) => {
-                            TradeService.saveTrade(trade);
+                        await this.subscribeToTrades(market, async (trade: ITrade) => {
+                            await TradeService.saveTrade(trade);
                         })
                         resolve();
                     }
 
-                }  catch(e) {
-                    console.log(e);
+                } catch(e) {
+                    console.log('Error ');
+                    //reject(e);
                 }
             })
         });

@@ -9,10 +9,8 @@ export default class AuthController {
 
     static async registration(req, res, next) {
         try {
-
             // validate fields
             await AuthController.validateRegistration(req, next);
-
             const {email, password} = req.body;
             const userData = await UserService.registration(email, password);
             // set httpOnly cookie
@@ -85,7 +83,6 @@ export default class AuthController {
             next(err);
         }
     }
-
 
     static async validateRegistration(req, next) {
 

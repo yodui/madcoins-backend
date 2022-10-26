@@ -1,17 +1,19 @@
 import { Router } from 'express';
-import TradeController from '../controllers/trade.controller.js';
+import { TradeController } from '../controllers/trade.controller.js';
 
-const router = new Router();
+const TradeRouter = new Router();
 
 // get all trades
-router.get('/trades', TradeController.getTrades);
+TradeRouter.get('/trades', TradeController.getTrades);
 
 // delete trade by id
-router.delete('/trade/:id', TradeController.deleteTrade)
+TradeRouter.delete('/trade/:id', TradeController.deleteTrade);
 
-router.delete('/trade', TradeController.dropTrades)
+TradeRouter.delete('/trade', TradeController.dropTrades);
 
-router.get('/trades/count', TradeController.getCountTrades)
+TradeRouter.get('/trades/count', TradeController.getCountTrades);
+
+TradeRouter.post('/trade', TradeController.createBrokenTrade);
 
 
-export { router as TradeRouter };
+export { TradeRouter };

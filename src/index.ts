@@ -33,7 +33,7 @@ try {
 
 
     if([AppMode.julius, AppMode.watcher].includes(env.mode)) {
-        
+
         PoloniexApi.loadMarkets();
         BitfinexApi.loadMarkets();
         //const ethPairs = await BitfinexApi.getPairsByCoin(ECoin.ETH);
@@ -46,12 +46,14 @@ try {
             [ECoin.ETH, ECoin.BTC],
             [ECoin.DOGE, ECoin.BTC],
             [ECoin.EOS, ECoin.BTC],
+            [ECoin.SOL, ECoin.BTC],
+            [ECoin.LUNA, ECoin.USDT],
             [ECoin.SOL, ECoin.BTC]
         ];
         BitfinexApi.watchTrades(pairs);
 
-
     }
+
 
 } catch(e) {
     console.log(e);

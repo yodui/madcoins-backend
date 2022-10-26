@@ -69,5 +69,6 @@ interface IToken {
 
 }
 
+
 export { ITradingPair, IMarket, ITrade, IExchange, IUser, ECoin, IJsonError };
 
