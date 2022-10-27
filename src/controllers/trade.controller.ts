@@ -15,11 +15,11 @@ class TradeController {
 
     static async getTrades(req, res, next) {
         try {
-            const query = url.parse(req.url, true).query;
             // validate params
             await TradeController.validateTradeListOptions(req);
             // default values
             let [limit,offset] = [20,0];
+            const query = url.parse(req.url, true).query;
             // check
             if(typeof query.limit === 'string') limit = Number.parseInt(query.limit);
             if(typeof query.offset === 'string') offset = Number.parseInt(query.offset);

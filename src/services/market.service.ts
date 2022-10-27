@@ -12,7 +12,6 @@ export default class MarketService {
 
     static SQL_MARK_AS_WATCHED_BY_MARKET_ID = 'UPDATE market SET watched = 1 WHERE marketId = $1';
 
-
     static async getMarket(marketId: number): Promise<ITradingPair|boolean> {
         return new Promise(async (resolve, reject) => {
             try {
@@ -22,7 +21,6 @@ export default class MarketService {
             }
         })
     }
-
 
     static async findMarket(ids: ICoinsPairId, exId: number): Promise<number|boolean> {
         return new Promise(async (resolve, reject) => {
@@ -40,7 +38,6 @@ export default class MarketService {
             }
         })
     }
-
 
     static async createMarket(market: IMarket): Promise<number|boolean> {
         return new Promise(async (resolve, reject) => {
@@ -61,7 +58,6 @@ export default class MarketService {
             }
         })
     }
-
 
     static async markMarketAsWatched(marketId: number) {
         const result = await db.query(this.SQL_MARK_AS_WATCHED_BY_MARKET_ID, [marketId]);

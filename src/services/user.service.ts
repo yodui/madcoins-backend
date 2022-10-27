@@ -9,11 +9,11 @@ import ApiError from '../exceptions/api-error.js';
 
 import { MailService } from '../services/mail.service.js';
 import { TokenService, ITokensPair } from '../services/token.service.js';
+import {IUserListOptions} from "../controllers/auth.controller.js";
 
 interface IRegistrationResponse extends ITokensPair {
     user: UserDto
 }
-
 
 class UserService {
 
@@ -35,9 +35,17 @@ class UserService {
 
     static SQL_FIND_ACTIVE_USER_BY_EMAIL_AND_PASSWORD = 'SELECT * FROM users WHERE active = 1 AND email = $1 AND password = $2';
 
+    static SQL_REMOVE_USER_BY_ID = 'DELETE FROM users WHERE userId = $1';
 
-    static async getUsers(): Promise<Array<IUser>> {
-        let users = [];
+    static SQL_GET_COUNT_USERS = 'SELECT users AS cnt FROM stats WHERE type = 0';
+
+    static async getUsers(options: IUserListOptions) {
+        const users = {
+            count: await UserService.countUsers(),
+            rows: []
+        }
+        console.log('getUsers', options);
+
         const passFieldName = 'password';
         const result = await db.query(this.SQL_GET_USERS);
         result.rows.forEach(row => {
@@ -45,11 +53,27 @@ class UserService {
             if(row.hasOwnProperty(passFieldName)) {
                 delete row[passFieldName];
             }
-            users.push(this.mapFieldsToProps(row))
+            users.rows.push(this.mapFieldsToProps(row))
         })
         return users;
     }
 
+    static async countUsers() {
+        const result = await db.query(this.SQL_GET_COUNT_USERS);
+        let totalUsers = 0;
+        if(result.rows.length) {
+            totalUsers = result.rows[0].cnt;
+        }
+        return totalUsers
+    }
+
+    static async removeUser(userId: number): Promise<boolean> {
+        const result = await db.query(this.SQL_REMOVE_USER_BY_ID, [userId]);
+        if(!result.rowCount) {
+            return false;
+        }
+        return true;
+    }
 
     static async findUserByActivationLink(activationLink:string): Promise<IUser|false> {
         const result = await db.query(this.SQL_GET_USER_BY_ACTIVATION_LINK, [activationLink]);
@@ -59,23 +83,27 @@ class UserService {
         return false;
     }
 
-
     static async login(email: string, password: string): Promise<IUser|false> {
         // get user by email
         const usersByEmail = await this.findActiveUserByEmail(email);
         if(false === usersByEmail) {
-            return false;
+            // can't find active user by email
+            throw ApiError.BadRequest(`Can't find active user by email ${email}`);
         }
         const user = usersByEmail[0];
         const hashPassword = await this.getPassByUserId(user.userId);
         if(true === await bcrypt.compare(password, hashPassword)) {
             // success
-            return this.mapFieldsToProps(user);
+            return user;
+        } else {
+            // error, password is not valid
+            throw ApiError.BadRequest(`Password is not valid for user ${email}`);
         }
-        // error
-        return false;
     }
 
+    static async logout(refreshToken) {
+        return await TokenService.removeToken(refreshToken);
+    }
 
     static async getPassByUserId(userId: number): Promise<string|boolean> {
         const result = await db.query(this.SQL_GET_USER_PASS_BY_USER_ID, [userId]);
@@ -84,7 +112,6 @@ class UserService {
         }
         return false;
     }
-
 
     static async activateUser(activationLink: string): Promise<IUser|false> {
         const user = await this.findUserByActivationLink(activationLink);
@@ -98,7 +125,6 @@ class UserService {
         return false;
     }
 
-
     static async activateUserById(userId: number): Promise<IUser|false> {
         const result = await db.query(this.SQL_ACTIVATE_USER_BY_ID, [userId]);
         if(result.rows.length) {
@@ -106,7 +132,6 @@ class UserService {
         }
         return false;
     }
-
 
     private static mapFieldsToProps(row): IUser {
         return {
@@ -119,7 +144,6 @@ class UserService {
             activationLink: row.activationlink
         }
     }
-
 
     static async registration(email:string, password:string): Promise<IRegistrationResponse> {
 
@@ -160,12 +184,10 @@ class UserService {
         }
     }
 
-
     static async clearUnactiveUsersByEmail(email:string): Promise<boolean> {
         const result = await db.query(this.SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL, [email]);
         return true;
     }
-
 
     static async findActiveUserByEmail(email:string): Promise<boolean | IUser[]> {
         const result = await db.query(this.SQL_GET_ACTIVE_USER_BY_EMAIL, [email]);
@@ -181,7 +203,6 @@ class UserService {
         }
         return false;
     }
-
 
     static async insertUser(email:string, hashPassword:string, active:number, activationLink:string): Promise<false | IUser> {
         const result = await db.query(this.SQL_INSERT_NEW_USER, [email, hashPassword, active, activationLink]);

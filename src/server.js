@@ -19,15 +19,19 @@ try {
         if(err) throw err;
     });
 
-    socket.on('connection', (ws, req) => {
+    const pgNotifications = [
+        'insertTradeNotification',
+        'updateTradesGlobalCountNotification'
+    ];
 
-        console.log('New client connected!');
+    socket.on('connection', (ws, req) => {
         console.log(req);
 
-        const insertTradeNotification = 'insertTradeNotification';
-        client.query(`LISTEN "${insertTradeNotification}"`);
+        console.log('New client connected!');
 
-        const updateTradeNotification = '';
+        pgNotifications.forEach(notification => {
+            client.query(`LISTEN "${notification}"`);
+        });
 
         client.on('notification', async data => {
             console.log(data.payload);

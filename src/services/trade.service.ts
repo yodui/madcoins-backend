@@ -10,7 +10,7 @@ export default class TradeService {
 
     static SQL_GET_TRADES = 'SELECT t.*, (SELECT m.baseTicker || \'/\' || m.quoteTicker FROM markets AS m WHERE t.marketId = m.marketId) AS tickers FROM trades AS t ORDER BY mts DESC LIMIT $1 OFFSET $2';
 
-    static SQL_GET_COUNT_TRADES = 'SELECT count(*) AS cnt FROM trades';
+    static SQL_GET_COUNT_TRADES = 'SELECT trades AS cnt FROM stats WHERE type = 0';
 
     static SQL_TRUNCATE_TRADES = 'TRUNCATE TABLE trades';
 

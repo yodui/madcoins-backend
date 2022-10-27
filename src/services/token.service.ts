@@ -11,7 +11,9 @@ class TokenService {
 
     static SQL_FIND_REFRESH_TOKEN = 'SELECT * FROM tokens WHERE userId = $1';
 
-    static SQL_UPDATE_REFRESH_TOKEN = 'UPDATE tokens SET tokenId = $1 WHERE userId = $2';
+    static SQL_UPDATE_REFRESH_TOKEN = 'UPDATE tokens SET refreshToken = $1 WHERE userId = $2';
+
+    static SQL_REMOVE_REFRESH_TOKEN = 'DELETE FROM tokens WHERE refreshToken = $1';
 
     static SQL_INSERT_REFRESH_TOKEN = 'INSERT INTO tokens (userId, refreshToken) VALUES ($1, $2)';
 
@@ -27,9 +29,15 @@ class TokenService {
         }
     }
 
+    static async removeToken(refreshToken) {
+        const result = await db.query(this.SQL_REMOVE_REFRESH_TOKEN, [refreshToken]);
+        console.log(result);
+        return '123'
+    }
 
     static async saveToken(userId: number, refreshToken): Promise<void> {
         // check exists refresh token
+
         const result = await db.query(this.SQL_FIND_REFRESH_TOKEN, [userId]);
         if(result.rows.length) {
             const row = result.rows[0];

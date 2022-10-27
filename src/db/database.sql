@@ -26,10 +26,10 @@ ALTER TABLE trades ADD CONSTRAINT pkTradeId PRIMARY KEY (tradeId);
 -- Only one trade id on exchange
 CREATE UNIQUE INDEX ukTradeOnExchange ON trades (exId, exTradeId);
 
--- Create function and trigger for notification
+-- Create function and trigger for trades insert notification
 DROP FUNCTION IF EXISTS tradesInsertTrigger;
 
-CREATE or REPLACE FUNCTION tradesInsertTrigger() RETURNS trigger AS $$
+CREATE or REPLACE FUNCTION tradesInsertNotify() RETURNS trigger AS $$
 DECLARE
 BEGIN
     PERFORM pg_notify('insertTradeNotification', row_to_json(NEW)::text );
@@ -38,7 +38,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER tradesInsertTrigger AFTER INSERT ON trades
-    FOR EACH ROW EXECUTE PROCEDURE tradesInsertTrigger();
+    FOR EACH ROW EXECUTE PROCEDURE tradesInsertNotify();
 
 
 CREATE TABLE exchanges (
@@ -130,6 +130,23 @@ CREATE TABLE stats (
 
 INSERT INTO stats (trades, users, markets) VALUES (0, 0, 0);
 
+-- Create function and trigger for trades count update notification
+DROP FUNCTION IF EXISTS globalTradesCountNotify;
+
+CREATE or REPLACE FUNCTION globalTradesCountNotify() RETURNS trigger AS $$
+DECLARE
+BEGIN
+    PERFORM pg_notify('updateTradesGlobalCountNotification', row_to_json(NEW)::text );
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tradesGlobalCountTrigger AFTER UPDATE ON stats
+    FOR EACH ROW
+    WHEN (OLD.type = 0 AND OLD.trades IS DISTINCT FROM NEW.trades)
+    EXECUTE PROCEDURE globalTradesCountNotify();
+
+
 -- Create function and trigger for trades count update
 DROP FUNCTION IF EXISTS tradesCountUpdate;
 
@@ -141,7 +158,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tradesCountUpdateTrigger AFTER INSERT ON trades
+CREATE TRIGGER tradesCountUpdateTrigger AFTER INSERT OR UPDATE ON trades
     FOR EACH ROW EXECUTE PROCEDURE tradesCountUpdate();
 
 -- Create function and trigger for users count update
@@ -155,7 +172,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER usersCountUpdateTrigger AFTER INSERT ON users
+CREATE TRIGGER usersCountUpdateTrigger AFTER INSERT OR DELETE ON users
     FOR EACH ROW EXECUTE PROCEDURE usersCountUpdate();
 
 -- Create function and trigger for markets count update
