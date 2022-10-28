@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller.js';
 
+import authMiddleware from '../middlewares/auth-middleware.js';
+
 const AuthRouter = new Router();
 
 // user registration
@@ -22,7 +24,7 @@ AuthRouter.post('/login', AuthController.login);
 AuthRouter.get('/logout', AuthController.logout);
 
 // user test
-AuthRouter.get('/users', AuthController.getUsers);
+AuthRouter.get('/users', authMiddleware, AuthController.getUsers);
 
 
 export { AuthRouter };

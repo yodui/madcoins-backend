@@ -25,6 +25,8 @@ class UserService {
 
     static SQL_GET_USER_PASS_BY_USER_ID = 'SELECT password FROM users WHERE userId = $1';
 
+    static SQL_GET_ACTIVE_USER_BY_ID = 'SELECT * FROM users WHERE userId = $1';
+
     static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationLink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationLink';
 
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
@@ -81,6 +83,33 @@ class UserService {
             return this.mapFieldsToProps(result.rows[0]);
         }
         return false;
+    }
+
+    static async refresh(refreshToken:string) {
+        if(!refreshToken) {
+            throw ApiError.UnauthorizedError('Refresh token error. User is unauthorized');
+        }
+
+        // validate token
+        const userDto = await TokenService.validateRefreshToken(refreshToken);
+        if(!userDto) {
+            throw ApiError.UnauthorizedError('Refresh token validation error. User is unauthorized');
+        }
+
+        // check exists token in DB
+        const isRefreshTokenExists = await TokenService.existsRefreshToken(refreshToken);
+        if(!isRefreshTokenExists) {
+            throw ApiError.UnauthorizedError('Refresh token is not exists. User is unauthorized');
+        }
+
+        // try to find user by userData in db
+        const user = await this.findActiveUserById(userDto.userId);
+        if(!user) {
+            throw ApiError.UnauthorizedError('Can\'t find user by ID. User is unauthorized');
+        }
+        const tokens = this.generateTokens(user);
+
+        return {...tokens, user: userDto}
     }
 
     static async login(email: string, password: string): Promise<IUser|false> {
@@ -170,26 +199,31 @@ class UserService {
             const fullLink = `${process.env.API_URL}/api/activate/${activationLink}`;
             await MailService.sendActivationMail(email, fullLink);
 
-            // create Data Transfer Object from user
-            const userDto = new UserDto(user);
-
-            const tokens = TokenService.generateTokens(userDto);
-            // save refresh token in DB
-            TokenService.saveToken(user.userId, tokens.refreshToken);
-
-            return {...tokens, user: userDto};
+            return this.generateTokens(user);
 
         } else {
             throw ApiError.BadRequest('Registration error');
         }
     }
 
-    static async clearUnactiveUsersByEmail(email:string): Promise<boolean> {
+    static generateTokens(user: IUser) {
+
+        // create Data Transfer Object from user
+        const userDto = new UserDto(user);
+
+        const tokens = TokenService.generateTokens(userDto);
+        // save refresh token in DB
+        TokenService.saveToken(user.userId, tokens.refreshToken);
+
+        return {...tokens, user: userDto};
+    }
+
+    static async clearUnactiveUsersByEmail(email: string): Promise<boolean> {
         const result = await db.query(this.SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL, [email]);
         return true;
     }
 
-    static async findActiveUserByEmail(email:string): Promise<boolean | IUser[]> {
+    static async findActiveUserByEmail(email: string): Promise<boolean | IUser[]> {
         const result = await db.query(this.SQL_GET_ACTIVE_USER_BY_EMAIL, [email]);
         if(result.rows.length) {
             const users:IUser[] = [];
@@ -200,6 +234,15 @@ class UserService {
                 users.push(this.mapFieldsToProps(row));
             }
             return users;
+        }
+        return false;
+    }
+
+    static async findActiveUserById(userId: number): Promise<IUser | false> {
+        const result = await db.query(this.SQL_GET_ACTIVE_USER_BY_ID, [userId]);
+        if(result.rows.length) {
+            const row = result.rows[0];
+            return this.mapFieldsToProps(row);
         }
         return false;
     }
