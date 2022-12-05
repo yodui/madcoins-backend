@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS markets;
 -- Authorization tables
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS tokens;
+DROP TABLE IF EXISTS invites;
 -- Global stats of project
 DROP TABLE IF EXISTS stats;
 
@@ -115,6 +116,20 @@ CREATE TABLE tokens (
 
 -- Primary key for tokens
 ALTER TABLE tokens ADD CONSTRAINT pkTokenId PRIMARY KEY (tokenId);
+
+CREATE TABLE invites (
+    inviteId SERIAL,
+    code VARCHAR(32) NULL,
+    userId INT NULL,
+    activated SMALLINT DEFAULT 0,
+    activatedDate TIMESTAMP WITH TIME ZONE DEFAULT NULL
+);
+
+-- Primary key for invites
+ALTER TABLE invites ADD CONSTRAINT pkInviteId PRIMARY KEY (inviteId);
+
+-- Invites foreign key for userId
+ALTER TABLE invites ADD CONSTRAINT fkUserId FOREIGN KEY (userId) REFERENCES users (userId) ON DELETE CASCADE;
 
 
 -- Global project stats

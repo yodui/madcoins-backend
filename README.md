@@ -59,6 +59,6 @@ App running with */config/default.json* file by default.
 ### Development scripts
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Run app in |
+| `npm run dev` | Run app in *Julius* (both modes, *API* and *watcher*) |
 | `npm run wathcer` | Run app in *watcher* mode |
 | `npm run api` | Run app in *API* mode |

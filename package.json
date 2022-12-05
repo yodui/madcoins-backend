@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode api",
-    "restapi": "nodemon --ignore '*.cache.json' dist/index.js -mode api -port 3000",
+    "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode julius",
     "watcher": "nodemon --ignore '*.cache.json' dist/index.js -mode watcher -ex bitfinex poloniex -pairs ethusdt ethbtc"
   },
   "dependencies": {

@@ -16,6 +16,7 @@ import PoloniexApi from "./classes/exchange/poloniex/PoloniexApi.js";
 import {ECoin, ITradingPair} from "./classes/Interfaces.js";
 import {AppMode, env} from "./utils/Environment.js";
 
+// echanges from /config/default.json and other parameters
 console.log('ENV: ', env);
 
 try {
@@ -31,13 +32,10 @@ try {
         app.listen(env.port, () => console.log('Server started on port ' + env.port));
     }
 
-
     if([AppMode.julius, AppMode.watcher].includes(env.mode)) {
 
         PoloniexApi.loadMarkets();
         BitfinexApi.loadMarkets();
-        //const ethPairs = await BitfinexApi.getPairsByCoin(ECoin.ETH);
-        //console.log(ethPairs);
 
         const pairs: Array<ITradingPair> = [
             [ECoin.ETH, ECoin.USDT],
