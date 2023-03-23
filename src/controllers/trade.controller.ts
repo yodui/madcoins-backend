@@ -2,7 +2,7 @@ import TradeService from "../services/trade.service.js";
 import url from 'url';
 
 import { query, validationResult } from 'express-validator';
-import ApiError from '../exceptions/api-error.js';
+import { ApiError } from '../exceptions/api-error.js';
 
 import { ITrade, ECoin } from '../classes/Interfaces.js';
 

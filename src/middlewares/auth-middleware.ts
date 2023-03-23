@@ -1,4 +1,4 @@
-import ApiError from '../exceptions/api-error.js';
+import { ApiError } from '../exceptions/api-error.js';
 import { TokenService } from '../services/token.service.js';
 
 export default async (req, res, next) => {

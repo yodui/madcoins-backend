@@ -4,8 +4,9 @@ import { v4 as getActivationLink } from 'uuid';
 import { pool as db } from '../db/db.js';
 import { IUser } from '../classes/Interfaces.js';
 import UserDto from '../dtos/user.dto.js';
+import Invite from '../classes/auth/Invite';
 
-import ApiError from '../exceptions/api-error.js';
+import { ApiError } from '../exceptions/api-error.js';
 
 import { MailService } from '../services/mail.service.js';
 import { TokenService, ITokensPair } from '../services/token.service.js';
@@ -21,15 +22,17 @@ class UserService {
 
     static SQL_GET_USERS = 'SELECT * FROM users ORDER BY userId DESC';
 
-    static SQL_GET_ACTIVE_USER_BY_EMAIL = 'SELECT * FROM users WHERE email = $1 AND active = 1';
+    static SQL_GET_USER_BY_EMAIL = `SELECT * FROM users WHERE email = $1`;
 
     static SQL_GET_USER_PASS_BY_USER_ID = 'SELECT password FROM users WHERE userId = $1';
 
-    static SQL_GET_ACTIVE_USER_BY_ID = 'SELECT * FROM users WHERE userId = $1';
+    static SQL_GET_ACTIVE_USER_BY_ID = 'SELECT * FROM users WHERE userId = $1 AND active = 1';
 
     static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationLink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationLink';
 
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
+
+    static SQL_UNBIND_INVITES_FOR_UNACTIVE_USERS_BY_EMAIL = 'UPDATE invites SET userId = NULL, activated = 0, activatedDate = NULL WHERE userId IN (SELECT userId FROM users WHERE users.active = 0 AND users.email = $1)';
 
     static SQL_GET_USER_BY_ACTIVATION_LINK = 'SELECT * FROM users WHERE activationLink = $1';
 
@@ -40,6 +43,21 @@ class UserService {
     static SQL_REMOVE_USER_BY_ID = 'DELETE FROM users WHERE userId = $1';
 
     static SQL_GET_COUNT_USERS = 'SELECT users AS cnt FROM stats WHERE type = 0';
+
+    static SQL_GET_INVITE_BY_CODE = 'SELECT i.inviteId, i.code, i.userId, i.activated, i.activateddate FROM invites AS i WHERE i.code = $1';
+
+    static SQL_BIND_INVITE_TO_USER = 'UPDATE invites SET activated = 1, activatedDate = NOW(), userId = $2 WHERE inviteId = $1';
+
+    static SQL_UNBIND_INVITE = 'UPDATE invites SET activated = 0, activatedDate = NULL, userId = NULL WHERE inviteId = $1 AND userId = $2';
+
+
+    static async findInviteByCode(inviteCode: string) {
+        const result = await db.query(this.SQL_GET_INVITE_BY_CODE, [inviteCode]);
+        if(result.rows.length) {
+            return result.rows[0];
+        }
+        return false;
+    }
 
     static async getUsers(options: IUserListOptions) {
         const users = {
@@ -77,7 +95,7 @@ class UserService {
         return true;
     }
 
-    static async findUserByActivationLink(activationLink:string): Promise<IUser|false> {
+    static async findUserByActivationLink(activationLink: string): Promise<IUser|false> {
         const result = await db.query(this.SQL_GET_USER_BY_ACTIVATION_LINK, [activationLink]);
         if(result.rows.length) {
             return this.mapFieldsToProps(result.rows[0]);
@@ -85,7 +103,8 @@ class UserService {
         return false;
     }
 
-    static async refresh(refreshToken:string) {
+    static async refresh(refreshToken: string) {
+
         if(!refreshToken) {
             throw ApiError.UnauthorizedError('Refresh token error. User is unauthorized');
         }
@@ -114,19 +133,18 @@ class UserService {
 
     static async login(email: string, password: string): Promise<IUser|false> {
         // get user by email
-        const usersByEmail = await this.findActiveUserByEmail(email);
-        if(false === usersByEmail) {
+        const activeUserByEmail = await this.findUserByEmail(email, 1);
+        if(null === activeUserByEmail) {
             // can't find active user by email
-            throw ApiError.BadRequest(`Can't find active user by email ${email}`);
+            throw ApiError.FormError([{field:'email', errors: [`Can't find user`]}]);
         }
-        const user = usersByEmail[0];
-        const hashPassword = await this.getPassByUserId(user.userId);
+        const hashPassword = await this.getPassByUserId(activeUserByEmail.userId);
         if(true === await bcrypt.compare(password, hashPassword)) {
             // success
-            return user;
+            return activeUserByEmail;
         } else {
             // error, password is not valid
-            throw ApiError.BadRequest(`Password is not valid for user ${email}`);
+            throw ApiError.FormError([{field:'password', errors:[`Password is not valid`]}]);
         }
     }
 
@@ -174,19 +192,30 @@ class UserService {
         }
     }
 
-    static async registration(email:string, password:string): Promise<IRegistrationResponse> {
-
-        if(false !== await this.findActiveUserByEmail(email)) {
-            // active user with email is already exists
-            throw ApiError.LogicError(`User with email ${email} already exists`);
+    static async bindInvite(inviteId: number, userId: number): Promise<boolean> {
+        const result = await db.query(this.SQL_BIND_INVITE_TO_USER, [inviteId, userId]);
+        if (result !== null) {
+            return true;
         }
+        return false;
+    }
+
+    static async registration(email: string, password: string): Promise<IRegistrationResponse> {
+
+        if(null !== await this.findUserByEmail(email, 1)) {
+            // active user with email is already exists
+            throw ApiError.FormError([{field: 'email', errors: [`User with this email already exists`] }]);
+        }
+
+        // unbind invites for unactive users with current email
+        await this.unbindInvitesForUnactiveUsers(email);
 
         // clear all unactive users with same email
         await this.clearUnactiveUsersByEmail(email);
 
         // check exists password
         if(password === undefined || !password) {
-            throw ApiError.LogicError('Password requires for registration');
+            throw ApiError.FormError([{field: 'password', errors: ['Password requires for registration'] }]);
         }
         const hashPassword = await bcrypt.hash(password, this.SALT);
         const activationLink = getActivationLink(); // ex.: 99770c6c-d8e8-4782-ac86-25f7fd32ccdf
@@ -223,19 +252,33 @@ class UserService {
         return true;
     }
 
-    static async findActiveUserByEmail(email: string): Promise<boolean | IUser[]> {
-        const result = await db.query(this.SQL_GET_ACTIVE_USER_BY_EMAIL, [email]);
-        if(result.rows.length) {
-            const users:IUser[] = [];
-            for(let index in result.rows) {
-                const row = result.rows[index];
-                const dateCreate = new Date(row.registerdate);
-                // mapping
-                users.push(this.mapFieldsToProps(row));
-            }
-            return users;
+    static async unbindInvitesForUnactiveUsers(email: string): Promise<boolean> {
+        const result = await db.query(this.SQL_UNBIND_INVITES_FOR_UNACTIVE_USERS_BY_EMAIL, [email]);
+        if(result !== null) {
+            return true;
         }
         return false;
+    }
+
+    static async findUserByEmail(email: string, active?: number): Promise<null | IUser> {
+
+        const sqlLimit = ' LIMIT 1';
+        let sqlActiveCondition = '';
+        if(active !== undefined && [0,1].includes(active)) {
+            sqlActiveCondition = ' AND active = ' + active;
+        }
+
+        const sql = this.SQL_GET_USER_BY_EMAIL + sqlActiveCondition + sqlLimit;
+
+        const result = await db.query(sql, [email]);
+        let user:IUser = null;
+        if(result.rows.length) {
+            if(result.rows.length) {
+                const row = result.rows[0];
+                user = this.mapFieldsToProps(row);
+            }
+        }
+        return user;
     }
 
     static async findActiveUserById(userId: number): Promise<IUser | false> {

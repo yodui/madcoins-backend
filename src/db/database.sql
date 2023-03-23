@@ -128,9 +128,13 @@ CREATE TABLE invites (
 -- Primary key for invites
 ALTER TABLE invites ADD CONSTRAINT pkInviteId PRIMARY KEY (inviteId);
 
+-- Only one unique invite code in table
+CREATE UNIQUE INDEX ukInviteCode ON invites (code);
+
 -- Invites foreign key for userId
 ALTER TABLE invites ADD CONSTRAINT fkUserId FOREIGN KEY (userId) REFERENCES users (userId) ON DELETE CASCADE;
 
+INSERT INTO invites (code) VALUES ('A001'), ('A002'), ('A003'), ('A004'), ('B001'), ('B002'), ('B003'), ('B004');
 
 -- Global project stats
 CREATE TABLE stats (

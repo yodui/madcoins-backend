@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode julius",
+    "api": "nodemon --ignore '*.cache.json' dist/index.js -mode api -port 3000",
     "watcher": "nodemon --ignore '*.cache.json' dist/index.js -mode watcher -ex bitfinex poloniex -pairs ethusdt ethbtc"
   },
   "dependencies": {

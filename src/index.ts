@@ -9,6 +9,7 @@ import {ExchangeRouter} from './routers/exchange.router.js';
 import {TradingPairRouter} from "./routers/tradingPair.router.js";
 import {TradeRouter} from "./routers/trade.router.js";
 import {AuthRouter} from "./routers/auth.router.js";
+import {DashboardRouter} from './routers/dashboard.router.js';
 
 import BitfinexApi from "./classes/exchange/bitfinex/BitfinexApi.js";
 import PoloniexApi from "./classes/exchange/poloniex/PoloniexApi.js";
@@ -26,7 +27,7 @@ try {
         app.use(express.json());
         app.use(cookieParser());
         app.use(cors());
-        app.use('/api', [ExchangeRouter, TradingPairRouter, TradeRouter, AuthRouter]);
+        app.use('/api', [ExchangeRouter, TradingPairRouter, TradeRouter, AuthRouter, DashboardRouter]);
         app.use(errorMiddleware);
 
         app.listen(env.port, () => console.log('Server started on port ' + env.port));
@@ -48,7 +49,7 @@ try {
             [ECoin.LUNA, ECoin.USDT],
             [ECoin.SOL, ECoin.BTC]
         ];
-        BitfinexApi.watchTrades(pairs);
+        //BitfinexApi.watchTrades(pairs);
 
     }
 

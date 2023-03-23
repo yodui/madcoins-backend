@@ -2,7 +2,7 @@ import { pool as db } from "../db/db.js";
 import {ITrade} from "../classes/Interfaces.js";
 import {IListTradesOptions} from "../controllers/trade.controller.js";
 
-import ApiError from '../exceptions/api-error.js';
+import { ApiError } from '../exceptions/api-error.js';
 
 export default class TradeService {
 
@@ -59,7 +59,6 @@ export default class TradeService {
         db.query(this.SQL_TRUNCATE_TRADES);
     }
 
-
     private static mapFieldsToProps(row) {
         return {
             tradeId: row.tradeId,
@@ -67,7 +66,5 @@ export default class TradeService {
             pair: null
         }
     }
-
-
 
 }
