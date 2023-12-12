@@ -20,7 +20,7 @@ class TokenService {
     static SQL_INSERT_REFRESH_TOKEN = 'INSERT INTO tokens (userId, refreshToken) VALUES ($1, $2)';
 
     public static refreshTokenExpiresInDays: number = 45;
-    public static accessTokenExpiresInMinutes: number = 15;
+    public static accessTokenExpiresInMinutes: number = 5;
 
     static generateTokens(user: UserDto): ITokensPair {
         const accessToken = jwt.sign({...user}, process.env.JWT_ACCESS_SECRET_KEY, { expiresIn: this.accessTokenExpiresInMinutes+'m' });

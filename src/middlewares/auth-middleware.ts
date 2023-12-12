@@ -6,6 +6,8 @@ export default async (req, res, next) => {
         // get token header from http headers
         const authorizationHeader = req.headers.authorization;
         if(!authorizationHeader) {
+            // trying to get accessToken from body
+
             return next(ApiError.UnauthorizedError());
         }
         // get token from header
@@ -13,11 +15,13 @@ export default async (req, res, next) => {
         if(!accessToken) {
             return next(ApiError.UnauthorizedError());
         }
+
         // validate token
         const userData = await TokenService.validateAccessToken(accessToken);
         if(!userData) {
             return next(ApiError.UnauthorizedError());
         }
+
         // save user in request
         req.user = userData;
         next();

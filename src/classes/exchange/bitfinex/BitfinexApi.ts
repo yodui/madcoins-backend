@@ -48,7 +48,7 @@ class BitfinexApi extends Exchange {
     // configs
     static URI_CONF_LIST_PAIRS:string = 'conf/pub:list:pair:exchange';
 
-    static async loadMarkets(): Promise<Array<ITradingPair>> {
+    static async loadMarkets (): Promise<Array<ITradingPair>> {
         return new Promise<Array<ITradingPair>>(async (resolve, reject) => {
             const endpoint: string = this.URI_PUBLIC + this.URI_CONF_LIST_PAIRS;
             try {
@@ -110,7 +110,7 @@ class BitfinexApi extends Exchange {
     }
 
 
-    static getPairsByCoin(coinTicker: ECoin): Promise<Array<ITradingPair>> {
+    static getPairsByCoin (coinTicker: ECoin): Promise<Array<ITradingPair>> {
         return new Promise(async (resolve, reject) => {
             try {
                 const pairs = await this.getPairs();
@@ -153,6 +153,7 @@ class BitfinexApi extends Exchange {
                         exId: market.exId,
                         exTicker: market.exTicker,
                         pair: market.tradingPair,
+                        marketTicker: market.marketTicker,
                         exTradeId: raw[0],
                         mts: raw[1],
                         amount: raw[2],
@@ -166,7 +167,7 @@ class BitfinexApi extends Exchange {
     }
 
 
-    static watchTrades(tradingPairs: Array<ITradingPair>) {
+    static watchTrades (tradingPairs: Array<ITradingPair>) {
 
         asyncForeach(tradingPairs, async (pair) => {
             return new Promise(async (resolve, reject) => {
@@ -191,6 +192,7 @@ class BitfinexApi extends Exchange {
                         const market: IMarket = {
                             exId: exchangeId,
                             exTicker: this.exTicker,
+                            marketTicker: MarketService.tickerByPair(pair),
                             baseCoinId: coinsId[0],
                             quoteCoinId: coinsId[1],
                             tradingPair: pair
@@ -222,12 +224,12 @@ class BitfinexApi extends Exchange {
     }
 
 
-    static findPairId(pair:ITradingPair): number|boolean {
+    static findPairId (pair:ITradingPair): number|boolean {
 
         return false;
     }
 
-    static async existsOnExchange(targetPair: ITradingPair): Promise<boolean> {
+    static async existsOnExchange (targetPair: ITradingPair): Promise<boolean> {
         let pairs = await this.getPairs();
         for(const [key, pair] of Object.entries(pairs)) {
             if (pair[0] === targetPair[0] && pair[1] === targetPair[1]) {

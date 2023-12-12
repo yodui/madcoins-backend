@@ -1,23 +1,25 @@
-DROP TABLE IF EXISTS trades;
-DROP TABLE IF EXISTS coins;
-DROP TABLE IF EXISTS exchanges;
-DROP TABLE IF EXISTS markets;
+DROP TABLE IF EXISTS trades CASCADE;
+DROP TABLE IF EXISTS coins CASCADE;
+DROP TABLE IF EXISTS exchanges CASCADE;
+DROP TABLE IF EXISTS markets CASCADE;
 -- Authorization tables
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS tokens;
-DROP TABLE IF EXISTS invites;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS tokens CASCADE;
+DROP TABLE IF EXISTS invites CASCADE;
 -- Global stats of project
-DROP TABLE IF EXISTS stats;
+DROP TABLE IF EXISTS stats CASCADE;
 
 CREATE TABLE trades (
     tradeId SERIAL,
-    -- overkill exchange info (this info is also included in markets table)
+    -- additional exchange info (this info is also included in markets table)
     exId INTEGER,
     exTicker VARCHAR(64) DEFAULT NULL,
     -- exchange trade id
     exTradeId INTEGER,
-    -- market id (market contains pair of
+    -- market id
     marketId INTEGER,
+    -- additional info, market ticker (coin tickers also contained in markets table)
+    marketTicker VARCHAR(32) DEFAULT NULL,
     mts BIGINT,
     amount FLOAT,
     rate FLOAT
@@ -33,7 +35,7 @@ DROP FUNCTION IF EXISTS tradesInsertTrigger;
 CREATE or REPLACE FUNCTION tradesInsertNotify() RETURNS trigger AS $$
 DECLARE
 BEGIN
-    PERFORM pg_notify('insertTradeNotification', row_to_json(NEW)::text );
+    PERFORM pg_notify('insertTradeNotification', row_to_json(NEW)::text);
     RETURN new;
 END;
 $$ LANGUAGE plpgsql;

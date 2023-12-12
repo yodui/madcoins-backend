@@ -28,7 +28,7 @@ class UserService {
 
     static SQL_GET_ACTIVE_USER_BY_ID = 'SELECT * FROM users WHERE userId = $1 AND active = 1';
 
-    static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationLink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationLink';
+    static SQL_INSERT_NEW_USER = 'INSERT INTO users (email, password, active, activationlink) VALUES ($1, $2, $3, $4) RETURNING userId, email, active, activationlink';
 
     static SQL_REMOVE_ALL_UNACTIVE_USERS_BY_EMAIL = 'DELETE FROM users WHERE email = $1 AND active = 0';
 
@@ -103,7 +103,7 @@ class UserService {
         return false;
     }
 
-    static async refresh(refreshToken: string) {
+    static async refreshToken(refreshToken: string) {
 
         if(!refreshToken) {
             throw ApiError.UnauthorizedError('Refresh token error. User is unauthorized');
@@ -128,7 +128,7 @@ class UserService {
         }
         const tokens = this.generateTokens(user);
 
-        return {...tokens, user: userDto}
+        return {...tokens, user: new UserDto(user)}
     }
 
     static async login(email: string, password: string): Promise<IUser|false> {
@@ -200,7 +200,7 @@ class UserService {
         return false;
     }
 
-    static async registration(email: string, password: string): Promise<IRegistrationResponse> {
+    static async registration(email: string, password: string): Promise<UserDto> {
 
         if(null !== await this.findUserByEmail(email, 1)) {
             // active user with email is already exists
@@ -228,7 +228,10 @@ class UserService {
             const fullLink = `${process.env.API_URL}/api/activate/${activationLink}`;
             await MailService.sendActivationMail(email, fullLink);
 
-            return this.generateTokens(user);
+            const userDto = new UserDto(user);
+            console.log('userDto2: ', userDto);
+
+            return userDto;
 
         } else {
             throw ApiError.BadRequest('Registration error');
@@ -290,7 +293,7 @@ class UserService {
         return false;
     }
 
-    static async insertUser(email:string, hashPassword:string, active:number, activationLink:string): Promise<false | IUser> {
+    static async insertUser(email: string, hashPassword: string, active: number, activationLink: string): Promise<false | IUser> {
         const result = await db.query(this.SQL_INSERT_NEW_USER, [email, hashPassword, active, activationLink]);
         if(result.rows.length) {
             const data = result.rows[0];

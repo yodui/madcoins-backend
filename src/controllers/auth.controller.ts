@@ -10,20 +10,15 @@ import UserDto from '../dtos/user.dto.js';
 interface IUserListOptions {
 }
 
+const REFRESH_TOKEN = 'refreshToken';
+
 class AuthController {
 
     static async testData(req, res, next) {
         try {
             console.log('testData...', req.body);
-
-            await AuthController.validateLoginData(req);
-            const {email, password} = req.body;
-
-            // check exists active user with same email and pass
-            const user = await UserService.login(email, password);
-            console.log('user: ', user);
-
-            return res.json({email:email,password:password})
+            res.cookie('test231', 81, { maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
+            return res.json({response: 'test'})
         } catch (err) {
             next(err);
         }
@@ -40,31 +35,29 @@ class AuthController {
             const inviteObject = new Invite(invite);
 
             if(inviteObject.isInvalid) {
-                throw ApiError.BadRequest('Invite syntax error', [{field: 'invite', errors:['Invite syntax error']}]);
+                throw ApiError.FormError([{field: 'invite', errors:['Invite syntax error']}]);
             }
 
             if(await inviteObject.isExists() === false) {
-                throw ApiError.BadRequest('Invite code is not exists', [{field: 'invite', errors:['Invite code is not exists']}]);
+                throw ApiError.FormError([{field: 'invite', errors:['Invite code is not exists']}]);
             }
 
             if(await inviteObject.isAvailable() === false) {
                 // invite is binded to user, check user active
                 if(await inviteObject.isBindedUserActive() === true) {
-                    throw ApiError.BadRequest('Invite code is not available', [{field: 'invite', errors:['Invite code is not available']}]);
+                    throw ApiError.FormError([{field: 'invite', errors:['Invite code is not available']}]);
                 }
             }
 
-            const signUpResponse = await UserService.registration(email, password);
+            const userDto = await UserService.registration(email, password);
 
             // bind invite to user
-            const bindingResult = await inviteObject.bind(signUpResponse.user.userId);
+            const bindingResult = await inviteObject.bind(userDto.userId);
             if(bindingResult === false) {
                 throw ApiError.BadRequest('Invite binding exception', [{field: 'invite', errors:['Invite binding exception']}]);
             }
 
-            // set httpOnly cookie
-            res.cookie('refreshToken', signUpResponse.refreshToken, {maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
-            return res.json(signUpResponse);
+            return res.json(userDto);
 
         } catch (err) {
             next(err);
@@ -130,6 +123,7 @@ class AuthController {
         }
     }
 
+
     static async login(req, res, next) {
         try {
             await AuthController.validateLoginData(req);
@@ -141,14 +135,20 @@ class AuthController {
 
                 const userDto = new UserDto(user);
 
+                res.header('Access-Control-Allow-Headers', '*');
+                res.header('Access-Control-Allow-Origin', req.headers.origin);
+                res.header('Access-Control-Allow-Credentials', true);
+                res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+
                 // generate access and refresh tokens
                 const tokens = TokenService.generateTokens(userDto);
                 // save refresh token in DB
                 TokenService.saveToken(user.userId, tokens.refreshToken);
 
-                res.cookie('refreshToken', tokens.refreshToken, {maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
+                res.cookie('refreshToken', tokens.refreshToken, {path: '/', maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
 
                 return res.json({'result':true, 'user': userDto, ...tokens});
+
             } else {
                 return next(ApiError.BadRequest('Login error', [{field:'password', errors:['Error']}]));
             }
@@ -160,22 +160,22 @@ class AuthController {
     static async logout(req, res, next) {
         try {
             const {refreshToken} = req.cookies;
-            // delete refreshToken from db
+            // delete refresh token from db
             const token = await UserService.logout(refreshToken);
-            // remove token from cookies
-            res.clearCookie('refreshToken');
-            return res.json(token);
+            // remove refresh token from cookies
+            res.clearCookie(REFRESH_TOKEN, { path: '/' });
+            return res.json({result: true});
         } catch(err) {
             next(err);
         }
     }
 
-    static async createRefreshToken(req, res, next) {
+    static async refreshToken(req, res, next) {
         try {
             const {refreshToken} = req.cookies;
-            const userData = await UserService.refresh(refreshToken);
-            res.cookie('refreshToken', userData.refreshToken, {maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
-            return res.json(userData);
+            const response = await UserService.refreshToken(refreshToken);
+            res.cookie(REFRESH_TOKEN, response.refreshToken, {maxAge: TokenService.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000, httpOnly: true});
+            return res.json(response);
         } catch(err) {
             next(err);
         }

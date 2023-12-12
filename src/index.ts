@@ -24,9 +24,13 @@ try {
 
     if([AppMode.julius, AppMode.api].includes(env.mode)) {
         const app = express();
+        const corsOptions = {
+            credentials: true,
+            origin: true
+        };
+        app.use(cors(corsOptions));
         app.use(express.json());
         app.use(cookieParser());
-        app.use(cors());
         app.use('/api', [ExchangeRouter, TradingPairRouter, TradeRouter, AuthRouter, DashboardRouter]);
         app.use(errorMiddleware);
 
@@ -35,11 +39,15 @@ try {
 
     if([AppMode.julius, AppMode.watcher].includes(env.mode)) {
 
-        PoloniexApi.loadMarkets();
+        console.log(await BitfinexApi.getPairs());
+
+        //PoloniexApi.loadMarkets();
         BitfinexApi.loadMarkets();
 
         const pairs: Array<ITradingPair> = [
             [ECoin.ETH, ECoin.USDT],
+            [ECoin.ADA, ECoin.BTC],
+            [ECoin.ADA, ECoin.USDT],
             [ECoin.BTC, ECoin.USDC],
             [ECoin.XRP, ECoin.BTC],
             [ECoin.ETH, ECoin.BTC],
@@ -47,9 +55,12 @@ try {
             [ECoin.EOS, ECoin.BTC],
             [ECoin.SOL, ECoin.BTC],
             [ECoin.LUNA, ECoin.USDT],
-            [ECoin.SOL, ECoin.BTC]
+            [ECoin.SOL, ECoin.BTC],
+            [ECoin.BTC, ECoin.LTC],
+            [ECoin.BTC, ECoin.ETC]
         ];
-        //BitfinexApi.watchTrades(pairs);
+        BitfinexApi.watchTrades(pairs);
+        //PoloniexApi.watchTrades(pairs);
 
     }
 

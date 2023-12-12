@@ -8,6 +8,7 @@ interface IMarket {
     baseCoinId: number, // base coin id
     quoteCoinId: number, // quote coin id
     tradingPair: ITradingPair, // trading pair (tickers)
+    marketTicker?: string|undefined, // market ticker
     exId: number, // exchange id
     exTicker: string|undefined // exchange ticker
 }
@@ -22,6 +23,8 @@ enum ECoin {
     LUNA = 'LUNA', // Luna
     BNB = 'BNB',
     XRP = 'XRP',
+    LTC = 'LTC', // Litecoin
+    ETC = 'ETC', // Ethereum Classic
     SOL = 'SOL', // Solana
     ADA = 'ADA', // Cardano
     DOGE = 'DOGE', // Dogecoin
@@ -43,6 +46,7 @@ interface ITrade {
     exTicker: string, // exchange ticker
     pair: ITradingPair, // trading pair
     marketId?: number|undefined, // market Id
+    marketTicker?: string|undefined, // market ticker
     exTradeId?: number|undefined, // exchange trade id
     mts: number, // milliseconds time stamp (from exchange)
     amount: number, // Amount bought (positive) or sold (negative)
@@ -59,6 +63,8 @@ interface IUser {
     userId?: number|undefined, // user ID
     email: string, // user email and login
     password?: string, // user password
+    invite?: string, // invite code
+    inviteId?: number, // invite record id
     active?: boolean, // active state of user
     tsDateReg?: bigint|undefined, // registration date, timestamp
     tsDateLastVisit?: bigint|undefined, // last visit, timestamp

@@ -18,13 +18,14 @@ AuthRouter.get('/activate/:link', AuthController.activate);
 AuthRouter.post('/user/exists', AuthController.userExists);
 
 // refresh JWT token
-AuthRouter.get('/token/refresh', AuthController.createRefreshToken);
+AuthRouter.get('/token/refresh', AuthController.refreshToken);
 
 // user login
 AuthRouter.post('/login', AuthController.login);
 
 // test
 AuthRouter.post('/testData', AuthController.testData);
+AuthRouter.get('/testData', AuthController.testData);
 
 // user logout
 AuthRouter.get('/logout', AuthController.logout);

@@ -12,6 +12,8 @@ export default class MarketService {
 
     static SQL_MARK_AS_WATCHED_BY_MARKET_ID = 'UPDATE market SET watched = 1 WHERE marketId = $1';
 
+    static SQL_GET_TICKERS_BY_MARKET_ID = 'SELECT (baseTicker || \'/\' || quoteTicker) AS ticker FROM markets WHERE marketId = $1';
+
     static async getMarket(marketId: number): Promise<ITradingPair|boolean> {
         return new Promise(async (resolve, reject) => {
             try {
@@ -20,6 +22,10 @@ export default class MarketService {
                 reject(e);
             }
         })
+    }
+
+    static tickerByPair (pair: ITradingPair) {
+        return pair[0] + '/' + pair[1];
     }
 
     static async findMarket(ids: ICoinsPairId, exId: number): Promise<number|boolean> {
@@ -38,6 +44,20 @@ export default class MarketService {
             }
         })
     }
+
+    static async getTickerByMarketId (marketId: number): Promise<string|boolean> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const result = await db.query(this.SQL_GET_TICKERS_BY_MARKET_ID, [marketId]);
+                if(result.rowCount > 0) {
+                    resolve(result.rows[0].ticker);
+                }
+            } catch(e) {
+                reject(false);
+            }
+        })
+    }
+
 
     static async createMarket(market: IMarket): Promise<number|boolean> {
         return new Promise(async (resolve, reject) => {

@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js",
+    "env": "cp .env ./dist/.env && cp ./src/ws/.env ./dist/ws/.env",
     "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode julius",
+    "ws": "nodemon dist/ws/server.js",
     "api": "nodemon --ignore '*.cache.json' dist/index.js -mode api -port 3000",
     "watcher": "nodemon --ignore '*.cache.json' dist/index.js -mode watcher -ex bitfinex poloniex -pairs ethusdt ethbtc"
   },
