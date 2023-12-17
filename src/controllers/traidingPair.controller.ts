@@ -1,4 +1,7 @@
+
 import {pool as db} from "../db/db.js";
+import { ApiError } from '../exceptions/api-error.js';
+
 
 export default class TradingPairController {
 
@@ -6,8 +9,13 @@ export default class TradingPairController {
         res.json('Create trading pair');
     }
 
-    static async getTradingPairs(req, res) {
-        res.json('Get trading pairs');
+    static async getTradingPairs(req, res, next) {
+        try {
+            res.json('Get trading pairs');
+            //const listOfTradingPairs = await TradingPairService.;
+        } catch(err) {
+            next(err);
+        }
     }
 
     static async getTradingPair(req, res) {

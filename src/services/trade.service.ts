@@ -1,6 +1,6 @@
 import { pool as db } from "../db/db.js";
-import {ITrade} from "../classes/Interfaces.js";
-import {IListTradesOptions} from "../controllers/trade.controller.js";
+import { ITrade } from "../classes/Interfaces.js";
+import { IListTradesOptions } from "../controllers/trade.controller.js";
 
 import { ApiError } from '../exceptions/api-error.js';
 
@@ -40,7 +40,7 @@ export default class TradeService {
         if(result.rows.length) {
              totalTrades = result.rows[0].cnt;
         }
-        return totalTrades
+        return totalTrades;
     }
 
     static async getTrades(options: IListTradesOptions) {

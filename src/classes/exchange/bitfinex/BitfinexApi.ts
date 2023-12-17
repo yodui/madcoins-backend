@@ -200,6 +200,7 @@ class BitfinexApi extends Exchange {
 
                         if(marketId === false) {
                             // market not found, create new
+                            console.log('create a new market');
                             marketId = await MarketService.createMarket(market);
                         }
 
