@@ -9,8 +9,8 @@ npm install
 Application use PostgreSQL relational database. Database dump (structure, functions, triggers and initial rows) you can find in [/src/db/database.sql](/src/db/database.sql), database connection parametrs sets in [/src/db/db.ts](/src/db/db.ts).
 
 ### Run application
-For start full environment of backend applications you need to run two backend points - *backend* and *web socket servers*. 
-Backend server will be response at backend endpoints, for ex. response at `/api/trades` by *http* protocol.
+For start full environment of backend applications you need to run two backend points - *backend* and *web socket servers*.  
+Backend server will be response at backend endpoints, for ex. response at `/api/trades` by *http* protocol.  
 Web socket server will be response by websocket protocol, instantly send and receive data. Websocket need for high reaction client interface.
 
 ### Email notifications
