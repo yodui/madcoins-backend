@@ -80,7 +80,9 @@ CREATE UNIQUE INDEX ukTicker ON coins (ticker);
 CREATE TABLE markets (
     marketId SERIAL,
     -- turn on / turn off market for clients
-    active SMALLINT DEFAULT 0,
+    enabled SMALLINT DEFAULT 1,
+    -- online market status
+    isOnline SMALLINT DEFAULT 0,
     -- link to exchange
     exId INTEGER NOT NULL,
     -- links to coins
@@ -88,12 +90,25 @@ CREATE TABLE markets (
     quoteCoinId INTEGER NOT NULL,
     -- some overkill fields for fast selection
     baseTicker VARCHAR(32) NOT NULL,
-    quoteTicker VARCHAR(32) NOT NULL
+    quoteTicker VARCHAR(32) NOT NULL,
+    -- date add
+    dateAdd TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    dateChange TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 -- Primary key for pairs
 ALTER TABLE markets ADD CONSTRAINT pkMarketId PRIMARY KEY (marketId);
 -- Only one trading pair on exchange
 CREATE UNIQUE INDEX ukPairOnExchange ON markets (exId, baseCoinId, quoteCoinId);
+
+CREATE OR REPLACE FUNCTION updateMarketChangeDate() RETURNS trigger AS $$
+BEGIN
+    UPDATE markets SET markets.dateChange = now() WHERE marketId = NEW.marketId;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER marketChangeDateUpdateTrigger AFTER INSERT OR UPDATE ON trades
+    FOR EACH ROW EXECUTE PROCEDURE updateMarketChangeDate();
 
 -- Trades foreign key for market
 ALTER TABLE trades ADD CONSTRAINT fkMarketId FOREIGN KEY (marketId) REFERENCES markets (marketId) ON DELETE CASCADE;
@@ -137,6 +152,7 @@ CREATE UNIQUE INDEX ukInviteCode ON invites (code);
 ALTER TABLE invites ADD CONSTRAINT fkUserId FOREIGN KEY (userId) REFERENCES users (userId) ON DELETE CASCADE;
 
 INSERT INTO invites (code) VALUES ('A001'), ('A002'), ('A003'), ('A004'), ('B001'), ('B002'), ('B003'), ('B004');
+
 
 -- Global project stats
 CREATE TABLE stats (

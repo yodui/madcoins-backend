@@ -7,7 +7,7 @@ import { env } from './utils/Environment.js';
 import { Client, EConnectionState } from './../classes/ws/Client.js';
 import { TokenService } from '../services/token.service.js';
 
-import { notifications, subscribes } from '../ws/subscribes/subscribes.js';
+//import { notifications, subscribes } from '../ws/subscribes/subscribes.js';
 
 let clients: Array<Client> = [];
 
@@ -25,9 +25,9 @@ db.connect(err => {
 try {
     console.log('The Websocket server is running on port', env.ws.port);
 
-    for(let key in notifications) {
-        await db.query(`LISTEN "${notifications[key]}"`);
-    }
+    //for(let key in notifications) {
+        //await db.query(`LISTEN "${notifications[key]}"`);
+    //}
 
     server.on('connection', async (ws, req) => {
 
@@ -39,7 +39,7 @@ try {
         console.log('Total clients connected:', clients.length);
 
         client.setState(EConnectionState.needAuth);
-        showClients();
+        //showClients();
 
         ws.onmessage = async (e) => {
 
@@ -53,6 +53,7 @@ try {
 
             switch(state) {
                 case EConnectionState.auth:
+                    console.log('response.state: auth');
                     // need to aunthenticate
                     if(response.hasOwnProperty('accessToken')) {
                         const userData = await TokenService.validateAccessToken(response.accessToken);
@@ -68,16 +69,17 @@ try {
                     }
                     break;
                 case EConnectionState.subs:
-                    console.log('Subs...');
+                    console.log('response.state: subs');
                     // subscription to data sets
                     if(response.hasOwnProperty('subs')) {
                         const subs = response.subs;
                         client.setSubs(subs);
+                        // set active state after received subs, this is important
                         client.setState(EConnectionState.active);
-                        // set active state again
                         showClients();
                     }
                     break;
+
             }
         };
 
@@ -91,14 +93,20 @@ try {
 
     });
 
+
+    /*
     db.on('notification', async data => {
         clients.forEach((c) => sendNotify(c, data.channel, data.payload))
     });
+    */
 
 } catch(e) {
+    console.log('Connection closed');
+    /*
     for(let key in notifications) {
-        await db.query(`UNLISTEN "${notifications[key]}"`);
+        //await db.query(`UNLISTEN "${notifications[key]}"`);
     }
+    */
     db.end();
     console.log(e);
 }
@@ -114,11 +122,11 @@ const sendNotify = (client, channel, payload) => {
 }
 
 const groupByChannel = (channel) => {
-    for(const group of Object.keys(subscribes)) {
-        if(subscribes[group].includes(channel)) {
-            return group;
-        }
-    }
+    //for(const group of Object.keys(subscribes)) {
+        //if(subscribes[group].includes(channel)) {
+        //    return group;
+        //}
+    //}
     return false;
 }
 

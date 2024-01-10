@@ -29,6 +29,10 @@ enum ECoin {
     ADA = 'ADA', // Cardano
     DOGE = 'DOGE', // Dogecoin
     DOT = 'DOT', // Polkadot
+
+    TRX = 'TRX', // Tron
+    AVAX = 'AVAX', // Avalanche
+
     USDTEST = 'USDTEST' // Reserved for testing
 }
 

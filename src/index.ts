@@ -8,6 +8,7 @@ import errorMiddleware from './middlewares/error-middleware.js';
 import {ExchangeRouter} from './routers/exchange.router.js';
 import {TradingPairRouter} from "./routers/tradingPair.router.js";
 import {TradeRouter} from "./routers/trade.router.js";
+import {MarketRouter} from "./routers/market.router.js";
 import {AuthRouter} from "./routers/auth.router.js";
 import {DashboardRouter} from './routers/dashboard.router.js';
 
@@ -31,7 +32,7 @@ try {
         app.use(cors(corsOptions));
         app.use(express.json());
         app.use(cookieParser());
-        app.use('/api', [ExchangeRouter, TradingPairRouter, TradeRouter, AuthRouter, DashboardRouter]);
+        app.use('/api', [ExchangeRouter, TradingPairRouter, TradeRouter, MarketRouter, AuthRouter, DashboardRouter]);
         app.use(errorMiddleware);
 
         app.listen(env.port, () => console.log('Server started on port ' + env.port));
@@ -46,8 +47,16 @@ try {
 
         const pairs: Array<ITradingPair> = [
             [ECoin.ETH, ECoin.USDT],
+
             [ECoin.ADA, ECoin.BTC],
             [ECoin.ADA, ECoin.USDT],
+            [ECoin.ADA, ECoin.USDC],
+
+            [ECoin.DOT, ECoin.BTC],
+            [ECoin.XRP, ECoin.USDC],
+            [ECoin.ETC, ECoin.USDC],
+            [ECoin.ETC, ECoin.BTC],
+
             [ECoin.BTC, ECoin.USDC],
             [ECoin.XRP, ECoin.BTC],
             [ECoin.ETH, ECoin.BTC],
@@ -57,7 +66,8 @@ try {
             [ECoin.LUNA, ECoin.USDT],
             [ECoin.SOL, ECoin.BTC],
             [ECoin.BTC, ECoin.LTC],
-            [ECoin.BTC, ECoin.ETC]
+            [ECoin.BTC, ECoin.ETC],
+
         ];
         BitfinexApi.watchTrades(pairs);
         //PoloniexApi.watchTrades(pairs);
