@@ -13,6 +13,8 @@ For start full environment of backend applications you need to run two backend p
 Backend server will be response at backend endpoints, for ex. response at `/api/trades` by *http* protocol.  
 Web socket server will be response by websocket protocol, instantly send and receive data. Websocket need for high reaction client interface.
 
+[Development scripts](#development-scripts)
+
 ### Email notifications
 Some endpoints sand email notifications to users (ex. user registration). In debug mode you can set your test SMTP settings or disabled sending. All mail settings you can set in [.env](/.env). For disabled sending notifications you can set [.env](./.env) variable `SMTP_SENDING=0` 
 
