@@ -23,6 +23,10 @@ export default class MarketService {
 
     static async getMarkets(options: IMarketListOptions) {
 
+        // add consitions:
+        // 1. enbaled === true|false
+        // 2. groupBy = pair|exchange
+
         const marketsData = {
             count: await MarketService.countMarkets(),
             rows:[]
