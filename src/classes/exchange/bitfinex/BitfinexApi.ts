@@ -1,44 +1,46 @@
-import ws from "ws";
-
 import axios from "axios";
-import {ITradingPair, ITrade, ECoin, IMarket} from "../../Interfaces.js";
-import {Exchange, ETickerConvert} from '../Exchange.js';
+import { ITradingPair, ITrade, ECoin, IMarket, IMarketsCache } from "../../Interfaces.js";
+import { Exchange, ETickerConvert } from '../Exchange.js';
 
 import TradeService from "../../../services/trade.service.js";
-import {CoinService} from "../../../services/coin.service.js";
+import { CoinService } from "../../../services/coin.service.js";
 import MarketService from "../../../services/market.service.js";
 import ExchangeService from "../../../services/exchange.service.js";
 
 import asyncForeach from '../../../utils/asyncForeach.js';
 
-
-
 class BitfinexApi extends Exchange {
 
-    static exTicker:string = 'BITFINEX';
+    exTicker:string = 'BITFINEX';
 
     // Ticker conversation below app and exchange formats
     // For what? Some times exchange invent unique ticker names, ex. UST instead of USDT
     // Converting format: exchange format => to Coin.TICKER (app format)
-    static convertRules:Array<[string, ECoin]> = [
+    convertRules:Array<[string, ECoin]> = [
         ['UST', ECoin.USDT],
         ['USD', ECoin.USDC]
     ];
 
     // testing keys
-    private static key:string = '';
-    private static secretKey:string = '';
+    private key:string = '';
+    private secretKey:string = '';
+
+    private messageHandler = null;
+
+    private EVENTS = {
+        subscribed: 'subscribed'
+    };
 
     // --------------------
     // public API
-    static URI_PUBLIC:string = 'https://api-pub.bitfinex.com/v2/';
+    URI_PUBLIC:string = 'https://api-pub.bitfinex.com/v2/';
 
     // high level overview of the state of the market. Ex. ?symbols=tBTCUSD
     GET_TICKERS:string = 'tickers';
 
     // --------------------
     // Web socket endpoint
-    static URI_WS:string = 'wss://api-pub.bitfinex.com/ws/2';
+    URI_WS:string = 'wss://api-pub.bitfinex.com/ws/2';
 
     // --------------------
     // Authenticated API
@@ -46,13 +48,13 @@ class BitfinexApi extends Exchange {
 
     // --------------------
     // configs
-    static URI_CONF_LIST_PAIRS:string = 'conf/pub:list:pair:exchange';
+    URI_CONF_LIST_PAIRS:string = 'conf/pub:list:pair:exchange';
 
-    static async loadMarkets (): Promise<Array<ITradingPair>> {
-        return new Promise<Array<ITradingPair>>(async (resolve, reject) => {
-            const endpoint: string = this.URI_PUBLIC + this.URI_CONF_LIST_PAIRS;
+    async loadMarkets (): Promise<IMarketsCache> {
+        return new Promise<IMarketsCache>(async (resolve, reject) => {
             try {
 
+                const endpoint: string = this.URI_PUBLIC + this.URI_CONF_LIST_PAIRS;
                 let axiosInstance = axios.create();
                 axiosInstance.interceptors.response.use(null, error => {
                     console.log('Error loading ' + error.config.url + ' error code: ' + error.response.data.code);
@@ -62,6 +64,7 @@ class BitfinexApi extends Exchange {
                 const response = await axiosInstance.get(endpoint);
 
                 let pairs:Array<ITradingPair> = [];
+                let unknownPairs:Array<ITradingPair> = [];
 
                 const rawPairs = response.data[0];
                 // parse pairs
@@ -81,13 +84,16 @@ class BitfinexApi extends Exchange {
                     const pair = this.toAppFormat(rawPair, this.convertRules);
                     if(this.existsTickers(pair)) {
                         pairs.push(pair);
+                    } else {
+                        // save unknown pairs
+                        unknownPairs.push(pair);
                     }
                 })
 
-                await this.cachePairs(pairs, this.exTicker);
+                await this.cachePairs(pairs, unknownPairs, this.exTicker);
 
-                resolve(pairs);
-
+                const result: IMarketsCache = {exists: pairs, unknown: unknownPairs};
+                resolve(result);
             } catch (err) {
                 reject(err);
             }
@@ -95,79 +101,89 @@ class BitfinexApi extends Exchange {
     }
 
 
-    static getPairs (forceUpdate = false): Promise<Array<ITradingPair>> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                if(!this.pairs.length || forceUpdate === true) {
-                    // get and save trading pairs
-                    this.pairs = await this.loadMarkets();
+    async parseMessage (d) {
+
+        //console.log('<- ', d);
+
+        if(d.hasOwnProperty('event') && d.hasOwnProperty('channel')) {
+
+            if(d.event === this.EVENTS.subscribed && d.channel === 'trades') {
+                // successful subscription
+                //console.log('Successful subscription...');
+                if(d.hasOwnProperty('chanId') && d.hasOwnProperty('symbol')) {
+                    const {chanId, symbol} = d;
+                    // console.log('ChannelId:', chanId, 'Symbol:', symbol);
+                    const sub = this.subs.marketTrades.find(sub => {
+                        const exPair = this.toExchangeFormat(sub.market.tradingPair, this.convertRules);
+                        const s = 't'+(exPair.join('')).toUpperCase();
+                        if(s === symbol) return sub;
+                    });
+                    if(sub !== undefined) {
+                        sub.channelId = chanId;
+                        // mark pair as watched
+                        await MarketService.markMarketAsWatched(sub.market.marketId);
+                    }
                 }
-                resolve(this.pairs);
-            } catch (err) {
-                reject(err);
             }
-        });
+        } else {
+
+            // format:
+            const channelId = parseInt(d[0]);
+            const second = d[1];
+            const sub = this.subs.marketTrades.find(sub => sub.channelId === channelId);
+
+            // check group of update message
+            if(typeof second === 'object' && Array.isArray(second)) {
+                // this is group, parse rows
+                second.forEach(row => this.processingTrade(sub, row))
+            } else {
+                // Variants: hb - heartbeat, te/tu, fte/ftu
+                // "tu" message contains the real trade ID
+                if(second === 'tu') {
+                    // processing only TE type message
+                    const raw = d[2];
+                    if(undefined !== raw) {
+                        this.processingTrade(sub, raw);
+                    }
+                }
+            }
+
+        }
+
     }
 
 
-    static getPairsByCoin (coinTicker: ECoin): Promise<Array<ITradingPair>> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const pairs = await this.getPairs();
-                const filteredPairs = Object.values(pairs).filter(pair => pair.includes(coinTicker));
-                resolve(filteredPairs);
-            } catch (err) {
-                reject(err);
-            }
-        })
+    private processingTrade (sub, raw) {
+        let trade: ITrade = {
+            marketId: sub.market.marketId,
+            exId: sub.market.exId,
+            exTicker: sub.market.exTicker,
+            pair: sub.market.tradingPair,
+            marketTicker: sub.market.marketTicker,
+            exTradeId: raw[0],
+            mts: raw[1],
+            amount: raw[2],
+            rate: raw[3]
+        }
+        TradeService.saveTrade(trade);
     }
 
 
-    static async subscribeToTrades (market:IMarket, onMessageHandler) {
+    subscribeMessage (market:IMarket):string {
         // convert pair to exchange format
         const exPair = this.toExchangeFormat(market.tradingPair, this.convertRules);
-        const msg = JSON.stringify({
+
+        const subscribeMessage = JSON.stringify({
             event: 'subscribe',
             channel: 'trades',
             symbol: 't'+(exPair.join('')).toUpperCase()
         });
 
-        // subscribe
-        const socket = new ws(this.URI_WS)
-
-        // subscribe to pair
-        socket.on('open', () => socket.send(msg))
-
-        socket.on('message', msg => {
-            let data = JSON.parse(msg);
-            // format:
-            const channelId = parseInt(data[0]);
-            const type = data[1];
-            // processing only TE type message
-            if(type === 'te') {
-                const raw = data[2];
-                if(undefined !== raw) {
-                    const trades:Array<ITrade> = [];
-                    let trade: ITrade = {
-                        marketId: market.marketId,
-                        exId: market.exId,
-                        exTicker: market.exTicker,
-                        pair: market.tradingPair,
-                        marketTicker: market.marketTicker,
-                        exTradeId: raw[0],
-                        mts: raw[1],
-                        amount: raw[2],
-                        rate: raw[3]
-                    }
-                    onMessageHandler(trade);
-                }
-
-            }
-        })
+        return subscribeMessage;
     }
 
 
-    static watchTrades (tradingPairs: Array<ITradingPair>) {
+    async watchTrades (tradingPairs: Array<ITradingPair>) {
 
         asyncForeach(tradingPairs, async (pair) => {
             return new Promise(async (resolve, reject) => {
@@ -179,7 +195,7 @@ class BitfinexApi extends Exchange {
                         console.log(pair, ' - pair is not exists on ', this.exTicker);
                     } else {
 
-                        const coinsId = await CoinService.createCoinsFromPair(pair);
+                        const coinsIds = await CoinService.createCoinsFromPair(pair);
 
                         const exchangeId = await ExchangeService.findExchangeByTicker(this.exTicker);
                         if(false === exchangeId) {
@@ -187,14 +203,14 @@ class BitfinexApi extends Exchange {
                         }
 
                         // fint market in DB
-                        let marketId = await MarketService.findMarket(coinsId, exchangeId);
+                        let marketId = await MarketService.findMarket(coinsIds, exchangeId);
 
                         const market: IMarket = {
                             exId: exchangeId,
                             exTicker: this.exTicker,
                             marketTicker: MarketService.tickerByPair(pair),
-                            baseCoinId: coinsId[0],
-                            quoteCoinId: coinsId[1],
+                            baseCoinId: coinsIds[0],
+                            quoteCoinId: coinsIds[1],
                             tradingPair: pair
                         };
 
@@ -209,14 +225,13 @@ class BitfinexApi extends Exchange {
                         }
 
                         console.log(pair, ' - subscribe to pair, marketID: ', marketId);
-                        await this.subscribeToTrades(market, async (trade: ITrade) => {
-                            await TradeService.saveTrade(trade);
-                        })
+
+                        await this.subscribeToMarketTrades(market)
                         resolve();
                     }
 
                 } catch(e) {
-                    console.log('Error ');
+                    console.log('Error subscribe to trades for ', this.exTicker, e);
                     //reject(e);
                 }
             })
@@ -225,18 +240,23 @@ class BitfinexApi extends Exchange {
     }
 
 
-    static findPairId (pair:ITradingPair): number|boolean {
-
-        return false;
+    handleOpenSocket () {
+        console.log('Socket with ', this.exTicker, ' was opened');
     }
 
-    static async existsOnExchange (targetPair: ITradingPair): Promise<boolean> {
-        let pairs = await this.getPairs();
-        for(const [key, pair] of Object.entries(pairs)) {
-            if (pair[0] === targetPair[0] && pair[1] === targetPair[1]) {
-                return true;
-            }
-        }
+
+    handleCloseSocket () {
+
+    }
+
+
+    getSocket () {
+        return super.initSocket(this.URI_WS);
+    }
+
+
+    findPairId (pair:ITradingPair): number|boolean {
+
         return false;
     }
 

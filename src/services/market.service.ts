@@ -16,7 +16,11 @@ export default class MarketService {
 
     static SQL_INSERT_MARKET = 'INSERT INTO markets (exId, baseCoinId, quoteCoinId, baseTicker, quoteTicker) VALUES ($1, $2, $3, $4, $5) RETURNING *';
 
-    static SQL_MARK_AS_WATCHED_BY_MARKET_ID = 'UPDATE market SET watched = 1 WHERE marketId = $1';
+    static SQL_MARK_AS_WATCHED_BY_MARKET_ID = 'UPDATE markets SET isOnline = 1 WHERE marketId = $1';
+
+    static SQL_MARK_MARKETS_LIST_AS_UNWATCHED = 'UPDATE markets SET isOnline = 0 WHERE marketId = ANY($1::int[])';
+
+    static SQL_MARK_AS_UNWATCHED_BY_MERKET_ID = 'UPDATE markets SET isOnline = 0 WHERE marketId = $1';
 
     static SQL_GET_TICKERS_BY_MARKET_ID = 'SELECT (baseTicker || \'/\' || quoteTicker) AS ticker FROM markets WHERE marketId = $1';
 
@@ -114,9 +118,25 @@ export default class MarketService {
         })
     }
 
+    static async markMarketsListAsUnwatched(marketsIds: Array<number>|null) {
+        try {
+            console.log('IDS2:', marketsIds);
+            const result = await db.query(this.SQL_MARK_MARKETS_LIST_AS_UNWATCHED, [marketsIds]);
+            console.log('CNT: ',result.rowCount);
+            return result.rowCount;
+        } catch(e) {
+            console.log(e);
+        }
+    }
+
     static async markMarketAsWatched(marketId: number) {
         const result = await db.query(this.SQL_MARK_AS_WATCHED_BY_MARKET_ID, [marketId]);
-        //console.log(result);
+        return result.rowCount;
+    }
+
+    static async markMarketAsUnwatched(marketId: number) {
+        const result = await db.query(this.SQL_MARK_AS_UNWATCHED_BY_MERKET_ID, [marketId]);
+        return result.rowCount;
     }
 
 }

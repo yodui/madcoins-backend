@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {mkdir} from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import path from 'path';
 
 async function getCacheDir(): Promise<string> {
@@ -22,22 +22,6 @@ async function getCacheDir(): Promise<string> {
         });
     });
 
-
-    /*
-    const __dirname = path.resolve();
-    const cacheFolder = path.join(__dirname, 'node_modules', '.cache');
-
-    await fs.stat(cacheFolder, async (err, stat) => {
-        if (err) {
-            if(err.code === 'ENOENT') {
-                const createDir = await mkdir(cacheFolder, {recursive: true});
-                console.log(`Cache directory was created ${createDir}`);
-            }
-        }
-    });
-
-    return cacheFolder;
-     */
 }
 
 export default getCacheDir;

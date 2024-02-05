@@ -27,18 +27,33 @@ Command line parameters:
 - `-mode` - application mode
 - `-port` - application server port (only for REST API mode)
 
-Application have three working modes:
+Application have four working modes:
 * **api** - in this mode application run server at port 3000 (by default), and you can call REST API endpoints.
 * **watcher** - in this mode app get list of exchanges and trading pairs for watching from command line and subscribe to trades of this pairs.
-* **julius** - this is both modes in one, name - reference to *Julius Caesar*.
+* **caster** - sometimes we need regular calculations, based on time periods (ex. candles data), this mode provides this features
+* **julius** - this is all modes in one, name - reference to *Julius Caesar*.
 
-**Example:**
+For all features of application you need to run all three first modes (**api**, **watcher** and **caster**). 
+I recommended to use different instances (terminals) for each mode.
+
+### Development scripts
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Run app in *Julius* (both modes, *API* and *watcher*) |
+| `npm run wathcer` | Run app in *watcher* mode |
+| `npm run api` | Run app in *API* mode |
+| `npm run ws` | Run WebSocket server |
+| `npm run caster` | Run app in *caster* mode |
+
+
+**Example without scripts:**
 
 `node index.js -mode api -port 2800` - run only in REST API mode at port 2800
 
 `node index.js -mode watcher` - run watcher mode
 
 `node index.js -mode julius` - run in both modes
+
 
 ### Exchanges and pairs for watching
 
@@ -47,7 +62,7 @@ You can set markets for watching in [/config/default.json](/config/default.json)
 
 **Notice**
 
-Currently application in develop and active state temporary don't use **/config/default.json** files.
+On current time application is in develop and active state. Temporary don't used **/config/default.json** files.
 All markets hardcoded in [/src/index.tsc](/src/index.tsc) file.
 
 #### Use app instances
@@ -62,11 +77,3 @@ App running with */config/default.json* file by default.
 
 `node dist/index.js -mode watcher` - run with `/config/default.json`
 
-
-### Development scripts
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Run app in *Julius* (both modes, *API* and *watcher*) |
-| `npm run wathcer` | Run app in *watcher* mode |
-| `npm run api` | Run app in *API* mode |
-| `npm run ws` | Run WebSocket server |

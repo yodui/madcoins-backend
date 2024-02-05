@@ -3,6 +3,13 @@ interface ITradingPair extends Array<string|undefined> {
     1: ECoin|undefined, // quote coin ticker
 }
 
+// all markets from exchanges
+// if pair coins is exits on
+interface IMarketsCache {
+    exists: Array<ITradingPair>,
+    unknown: Array<ITradingPair>
+}
+
 interface IMarket {
     marketId?: number, // market id
     baseCoinId: number, // base coin id
@@ -12,6 +19,7 @@ interface IMarket {
     exId: number, // exchange id
     exTicker: string|undefined // exchange ticker
 }
+
 
 enum ECoin {
     BTC = 'BTC', // Bitcoin
@@ -80,5 +88,5 @@ interface IToken {
 }
 
 
-export { ITradingPair, IMarket, ITrade, IExchange, IUser, ECoin, IJsonError };
+export { ITradingPair, IMarket, IMarketsCache, ITrade, IExchange, IUser, ECoin, IJsonError };
 

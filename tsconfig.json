@@ -11,7 +11,6 @@
   },
   "include" : [
     "src/index.ts",
-    "src/test.ts",
     "src/.env",
     "src/db/*",
     "src/utils/*",

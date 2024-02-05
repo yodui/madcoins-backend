@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import * as ws from 'ws';
 import pg from 'pg';
@@ -6,17 +7,22 @@ import * as crypto from 'crypto';
 import { env } from './utils/Environment.js';
 import { Client, EConnectionState } from './../classes/ws/Client.js';
 import { TokenService } from '../services/token.service.js';
+import getCacheDir from '../utils/CacheDir.js';
+
+import { Wizard } from '../classes/wizard/Wizard.js';
 
 //import { notifications, subscribes } from '../ws/subscribes/subscribes.js';
 
 let clients: Array<Client> = [];
 
-const server = new ws.WebSocketServer({ port: env.ws.port });
+let server = new ws.WebSocketServer({ port: env.ws.port });
 
 server.getUniqueID = () => crypto.randomUUID();
 
 const pgConnectionString = `postgresql://${env.db.user}:${env.db.password}@${env.db.host}:${env.db.port}/${env.db.database}`;
 const db = new pg.Client(pgConnectionString);
+
+let tickInterval = null;
 
 db.connect(err => {
     if(err) throw err;
@@ -24,10 +30,6 @@ db.connect(err => {
 
 try {
     console.log('The Websocket server is running on port', env.ws.port);
-
-    //for(let key in notifications) {
-        //await db.query(`LISTEN "${notifications[key]}"`);
-    //}
 
     server.on('connection', async (ws, req) => {
 
@@ -93,6 +95,28 @@ try {
 
     });
 
+    const cacheDir = await getCacheDir();
+    // watch to market id 17
+    const dir = path.resolve(cacheDir, 'markets');
+
+    const watchFiles = ['5/trades.json','17/trades.json','12/trades.json'];
+
+    watchFiles.forEach(file => {
+        const fullName = path.join(dir, file);
+        fs.watchFile(fullName, { persistent:true, interval: 100 }, (curr, prev) => {
+            console.log(`${fullName} file changed`);
+            clients.forEach(c => {
+                const subs = c.getSubs();
+                subs.find(s => {
+                   console.log('   ?:', s);
+                   if(s === 'trades') {
+                       tickInterval++;
+                       c.send('trades', JSON.stringify({'id': tickInterval , 'type': 'trade','file': fullName}));
+                   }
+                });
+            });
+        });
+    });
 
     /*
     db.on('notification', async data => {
@@ -102,11 +126,6 @@ try {
 
 } catch(e) {
     console.log('Connection closed');
-    /*
-    for(let key in notifications) {
-        //await db.query(`UNLISTEN "${notifications[key]}"`);
-    }
-    */
     db.end();
     console.log(e);
 }
@@ -116,17 +135,12 @@ const sendNotify = (client, channel, payload) => {
     if(!group) return;
     if(client.subs !== null && client.subs.length && client.subs.includes(group)) {
         console.log('trigger:', group, 'payload:', payload);
-
         client.send(group, payload);
     }
 }
 
 const groupByChannel = (channel) => {
-    //for(const group of Object.keys(subscribes)) {
-        //if(subscribes[group].includes(channel)) {
-        //    return group;
-        //}
-    //}
+
     return false;
 }
 

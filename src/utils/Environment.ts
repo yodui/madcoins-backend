@@ -6,6 +6,7 @@ import config from 'config';
 // -ex: Array<string> - list of exchange tickers for watching (space separator)
 enum AppMode {
     watcher = 'watcher',
+    caster = 'caster',
     api = 'api',
     julius = 'julius' // reference to Julius Caesar, he can do all things immediately
 }

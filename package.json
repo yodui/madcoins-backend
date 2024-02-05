@@ -9,6 +9,7 @@
     "dev": "nodemon --ignore '*.cache.json' dist/index.js -mode julius",
     "ws": "nodemon dist/ws/server.js",
     "api": "nodemon --ignore '*.cache.json' dist/index.js -mode api -port 3000",
+    "caster": "nodemon --ignore '*.cache.json' dist/index.js -mode caster",
     "watcher": "nodemon --ignore '*.cache.json' dist/index.js -mode watcher -ex bitfinex poloniex -pairs ethusdt ethbtc"
   },
   "dependencies": {

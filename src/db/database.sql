@@ -18,30 +18,41 @@ CREATE TABLE trades (
     exTradeId INTEGER,
     -- market id
     marketId INTEGER,
+    dateAdd TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     -- additional info, market ticker (coin tickers also contained in markets table)
     marketTicker VARCHAR(32) DEFAULT NULL,
+    -- exchange timestamp of trade
     mts BIGINT,
-    amount FLOAT,
-    rate FLOAT
+    -- general trade info - amount and exchange rate
+    amount DOUBLE PRECISION,
+    rate DOUBLE PRECISION
 );
 -- Primary key for trades
 ALTER TABLE trades ADD CONSTRAINT pkTradeId PRIMARY KEY (tradeId);
 -- Only one trade id on exchange
 CREATE UNIQUE INDEX ukTradeOnExchange ON trades (exId, exTradeId);
 
--- Create function and trigger for trades insert notification
-DROP FUNCTION IF EXISTS tradesInsertTrigger;
 
-CREATE or REPLACE FUNCTION tradesInsertNotify() RETURNS trigger AS $$
-DECLARE
-BEGIN
-    PERFORM pg_notify('insertTradeNotification', row_to_json(NEW)::text);
-    RETURN new;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER tradesInsertTrigger AFTER INSERT ON trades
-    FOR EACH ROW EXECUTE PROCEDURE tradesInsertNotify();
+CREATE TABLE candles (
+    -- Interval id, based on timestamp
+    intervalId INTEGER,
+    marketId INTEGER,
+    -- Highest/lowest price by interval
+    high DOUBLE PRECISION,
+    low DOUBLE PRECISION,
+    -- Open/close price by interval
+    open DOUBLE PRECISION,
+    close DOUBLE PRECISION,
+    -- Overall count of trades on interval
+    tradeCount INTEGER DEFAULT 0,
+    -- Timestamp open/close time for interval
+    openTime TIMESTAMP DEFAULT NULL,
+    closeTime TIMESTAMP DEFAULT NULL,
+    buyAmount DOUBLE PRECISION DEFAULT 0,
+    sellAmount DOUBLE PRECISION DEFAULT 0,
+    -- Average price by period
+    avgPrice DOUBLE PRECISION DEFAULT NULL
+);
 
 
 CREATE TABLE exchanges (
@@ -53,16 +64,17 @@ CREATE TABLE exchanges (
 );
 -- Primary key foe exchanges
 ALTER TABLE exchanges ADD CONSTRAINT pkExchangeId PRIMARY KEY (exId);
--- Only one exchange with name
+-- Only one exchange per name
 CREATE UNIQUE INDEX ukExchangeName ON exchanges (name);
--- Only one exchange with ticker
+-- Only one exchange per ticker
 CREATE UNIQUE INDEX ukExchangeTicker ON exchanges (ticker);
 
 -- Test data
-INSERT INTO exchanges (ticker, name, descr) VALUES ('BITFINEX', 'Bitfinex', 'Bitfinex exchange');
+INSERT INTO exchanges (exId, ticker, name, descr) VALUES (1, 'BITFINEX', 'Bitfinex', 'Bitfinex exchange'), (2, 'POLONIEX', 'Poloniex', 'Poloniex exchange');
 
--- Trades foreign key for exchange
+-- Trades foreign key for exchanges
 ALTER TABLE trades ADD CONSTRAINT fkExchangeId FOREIGN KEY (exId) REFERENCES exchanges (exId) ON DELETE CASCADE;
+
 
 CREATE TABLE coins (
     coinId SERIAL,
@@ -74,14 +86,14 @@ CREATE TABLE coins (
 
 -- Primary key for coins
 ALTER TABLE coins ADD CONSTRAINT pkCoinId PRIMARY KEY (coinId);
--- Ticker is unique
+-- Ticker is unique field (only one coin per ticker)
 CREATE UNIQUE INDEX ukTicker ON coins (ticker);
 
 CREATE TABLE markets (
     marketId SERIAL,
     -- turn on / turn off market for clients
     enabled SMALLINT DEFAULT 1,
-    -- online market status
+    -- online market status: 0 - offline, 1 - online
     isOnline SMALLINT DEFAULT 0,
     -- link to exchange
     exId INTEGER NOT NULL,
@@ -91,6 +103,8 @@ CREATE TABLE markets (
     -- some overkill fields for fast selection
     baseTicker VARCHAR(32) NOT NULL,
     quoteTicker VARCHAR(32) NOT NULL,
+    -- market price
+    rate DOUBLE PRECISION DEFAULT NULL,
     -- date add
     dateAdd TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     dateChange TIMESTAMP WITH TIME ZONE DEFAULT NULL
@@ -100,18 +114,25 @@ ALTER TABLE markets ADD CONSTRAINT pkMarketId PRIMARY KEY (marketId);
 -- Only one trading pair on exchange
 CREATE UNIQUE INDEX ukPairOnExchange ON markets (exId, baseCoinId, quoteCoinId);
 
-CREATE OR REPLACE FUNCTION updateMarketChangeDate() RETURNS trigger AS $$
+-- Markets baseCoinId foreign key
+ALTER TABLE markets ADD CONSTRAINT fkBaseCoinId FOREIGN KEY (baseCoinId) REFERENCES coins (coinId) ON DELETE SET NULL;
+-- Markets quoteCoinId foreign key
+ALTER TABLE markets ADD CONSTRAINT fkQuoteCoinId FOREIGN KEY (quoteCoinId) REFERENCES coins (coinId) ON DELETE SET NULL;
+
+-- Markets market id foreign key for trades
+ALTER TABLE trades ADD CONSTRAINT fkMarketId FOREIGN KEY (marketId) REFERENCES markets (marketId) ON DELETE SET NULL;
+
+
+CREATE OR REPLACE FUNCTION updateMarket() RETURNS trigger AS $$
 BEGIN
-    UPDATE markets SET markets.dateChange = now() WHERE marketId = NEW.marketId;
+    UPDATE markets SET dateChange = now(), rate = NEW.rate WHERE marketId = NEW.marketId;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER marketChangeDateUpdateTrigger AFTER INSERT OR UPDATE ON trades
-    FOR EACH ROW EXECUTE PROCEDURE updateMarketChangeDate();
+    FOR EACH ROW EXECUTE PROCEDURE updateMarket();
 
--- Trades foreign key for market
-ALTER TABLE trades ADD CONSTRAINT fkMarketId FOREIGN KEY (marketId) REFERENCES markets (marketId) ON DELETE CASCADE;
 
 CREATE TABLE users (
     userId SERIAL,
@@ -148,7 +169,7 @@ ALTER TABLE invites ADD CONSTRAINT pkInviteId PRIMARY KEY (inviteId);
 -- Only one unique invite code in table
 CREATE UNIQUE INDEX ukInviteCode ON invites (code);
 
--- Invites foreign key for userId
+-- Users foreign key for Invites
 ALTER TABLE invites ADD CONSTRAINT fkUserId FOREIGN KEY (userId) REFERENCES users (userId) ON DELETE CASCADE;
 
 INSERT INTO invites (code) VALUES ('A001'), ('A002'), ('A003'), ('A004'), ('B001'), ('B002'), ('B003'), ('B004');
@@ -166,23 +187,6 @@ CREATE TABLE stats (
 );
 
 INSERT INTO stats (trades, users, markets) VALUES (0, 0, 0);
-
--- Create function and trigger for trades count update notification
-DROP FUNCTION IF EXISTS globalTradesCountNotify;
-
-CREATE or REPLACE FUNCTION globalTradesCountNotify() RETURNS trigger AS $$
-DECLARE
-BEGIN
-    PERFORM pg_notify('updateTradesGlobalCountNotification', row_to_json(NEW)::text );
-    RETURN new;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER tradesGlobalCountTrigger AFTER UPDATE ON stats
-    FOR EACH ROW
-    WHEN (OLD.type = 0 AND OLD.trades IS DISTINCT FROM NEW.trades)
-    EXECUTE PROCEDURE globalTradesCountNotify();
-
 
 -- Create function and trigger for trades count update
 DROP FUNCTION IF EXISTS tradesCountUpdate;
